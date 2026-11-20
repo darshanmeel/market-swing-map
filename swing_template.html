@@ -93,7 +93,7 @@ td.r,th.r{text-align:right}
 .rk>div{position:relative;height:16px}.rk>div>i{position:absolute;left:0;top:2px;height:12px;border-radius:2px}
 .rk>div>em{position:absolute;top:-2px;bottom:-2px;width:0;border-left:1.5px dotted var(--fall)}
 .sub{border-top:1px solid var(--line);padding-top:16px;display:flex;flex-direction:column;gap:10px}.sub h3{margin:0;font-size:17px;font-weight:700}.sub h3.h15{font-size:15px}
-.fv{display:grid;grid-template-columns:96px minmax(260px,1fr) minmax(260px,1fr);gap:5px 14px;align-items:center;min-width:680px;font-size:12px}
+.fv{display:grid;grid-template-columns:96px minmax(260px,1fr) minmax(260px,1fr);gap:5px 14px;align-items:center;font-size:12px}
 .fv>.l{text-align:right}.fv b{font-weight:700}.fv .hd{font-weight:600}
 .fv>div{display:flex;align-items:center;gap:8px;min-width:0}.fv>div>i{height:14px;border-radius:2px;flex:none}.fv>div>span{white-space:nowrap}
 .ri{color:var(--rise)}.fi{color:var(--fall-ink)}
@@ -146,7 +146,7 @@ i.sw{display:inline-block;width:12px;height:12px;border-radius:2px;flex:none}
 .gside{flex:1 1 280px;min-width:0;display:flex;flex-direction:column;font-size:13px}
 .gside>div{display:flex;flex-direction:column;gap:2px;padding:8px 0;border-bottom:1px solid var(--line2)}
 .gside small{font-size:12px;color:var(--muted);display:flex;align-items:center;gap:6px}.gside span{font-weight:600}.gside span.d{font-weight:400}
-.cl{display:grid;grid-template-columns:minmax(150px,230px) minmax(0,1fr) 150px;gap:8px 14px;align-items:center;font-size:13px}
+.cl{display:grid;grid-template-columns:minmax(150px,250px) minmax(0,1fr) 210px;gap:8px 14px;align-items:center;font-size:13px}
 .cl>span:first-child,.cl>span.n{display:flex;align-items:center;gap:8px}.cl i.sw{width:10px;height:10px}
 .cl>div{height:16px;background:#F3F4F6;border-radius:3px;overflow:hidden}.cl>div>i{display:block;height:100%}
 .cl .m{font:13px var(--mono)}.cl .best{font-weight:700}
@@ -160,11 +160,24 @@ i.sw{display:inline-block;width:12px;height:12px;border-radius:2px;flex:none}
 .tr .dot{top:3px;width:16px;height:16px;margin-left:-8px;border-radius:50%;border:2px solid #fff}
 .tr .t{justify-self:start;font-size:12px;font-weight:600;border-radius:4px;padding:3px 8px}
 .t.ok{background:#DCE6FA;color:#163F96}.t.half{background:var(--line2);color:var(--ink)}.t.bad{background:#FBE3D6;color:var(--fall-ink)}.t.na{background:var(--line2);color:var(--muted)}
-.foot{color:var(--muted);font-size:12px;max-width:820px;margin-top:22px}
+.foot{color:var(--muted);font-size:12px;line-height:1.6;max-width:900px;margin:0}
+.sec h2.h20{font-size:20px}.cards{display:flex;flex-wrap:wrap;gap:16px;align-items:flex-start}.in.ref{flex:1 1 520px}
+.nl{position:relative;height:108px;margin:0 40px}.nl>i{position:absolute;display:block}
+.nl .tk{left:0;right:0;top:52px;height:4px;border-radius:2px;background:#E9EBEE}
+.nl .mk{top:44px;width:3px;height:20px;margin-left:-1.5px}
+.nl>span{position:absolute;width:max-content;max-width:150px;text-align:center;font-size:11px;line-height:1.3}
+.nl>span b{font:400 11px var(--mono);color:var(--ink)}
+#dailyPic{display:block;width:100%;height:auto;font-family:var(--mono)}
 @media (max-width:900px){.grid{grid-template-columns:1fr}}
+@media (min-width:901px){#fanList{max-height:300px;overflow-y:auto;padding-right:4px}}
 @media (max-width:600px){main{padding:20px 16px 48px}h1{font-size:28px}.verdict{font-size:16px}.card.sec{padding:16px 14px}.sec h2{font-size:19px}.turns{grid-template-columns:repeat(2,minmax(0,1fr))}.rk{grid-template-columns:72px minmax(0,1fr) 56px;gap:4px 8px}.stats{grid-template-columns:repeat(2,minmax(0,1fr))}.stats b{font-size:18px}
   .cl{grid-template-columns:1fr;gap:4px}.cl>span.m{margin-bottom:8px}
-  .tr{grid-template-columns:64px minmax(0,1fr);min-width:0;gap:4px 10px}.tr>.e{display:none}.tr>.t{grid-column:2;margin-bottom:6px}}
+  .nl>span{max-width:96px;font-size:10px}.nl>span b{font-size:10px}
+  .tr{grid-template-columns:64px minmax(0,1fr);min-width:0;gap:4px 10px}.tr>.e{display:none}.tr>.t{grid-column:2;margin-bottom:6px}
+  .fv{grid-template-columns:1fr;gap:3px}.fv>.l{text-align:left;font-weight:600;margin-top:8px}.fv>span:first-child{display:none}.fv>div>i{max-width:45%}.fv>div>span{white-space:normal}
+  .ib{min-width:0;font-size:12px}.ib th,.ib td{padding:6px 5px}.ib th{white-space:normal}.ib td.b i{display:none}.ib td.b span{white-space:normal}
+  #simBars th:nth-child(2),#simBars td:nth-child(2),#simBars th:nth-child(5),#simBars td:nth-child(5){display:none}
+  .info:hover::after,.info:focus::after,.info.r:hover::after,.info.r:focus::after{position:fixed;left:16px;right:16px;width:auto;top:auto;bottom:16px}}
 </style>
 </head>
 <body>
@@ -320,23 +333,34 @@ i.sw{display:inline-block;width:12px;height:12px;border-radius:2px;flex:none}
         <div class="seg" id="btSpan" role="group" aria-label="Score after"><span>Score after</span></div>
       </div>
       <div id="btChart"></div>
-      <details class="tbl" open><summary>Scores by method (5)</summary><div class="scroll"><table id="btSum"></table></div></details>
+      <div class="cap" id="btBarsCap"></div>
+      <div class="cl" id="btBars"></div>
+      <details class="tbl"><summary>Show the table (5)</summary><div class="scroll"><table id="btSum"></table></div></details>
       <p class="fn" id="btNote"></p>
       <details class="tbl"><summary>Show the table (<span id="btCount"></span>)</summary><div class="scroll"><table id="btTable"></table></div></details>
     </div>
   </section>
 
-  <div class="grid" id="tables">
-    <div class="side">
-      <section class="card"><h2 data-k="hl">Highs and lows</h2><table id="hl"></table></section>
+  <section id="tables" class="card sec" aria-label="Reference">
+    <h2 class="h20">Reference</h2>
+    <div class="cards">
+      <div class="in ref">
+        <h3 data-k="hl">Highs and lows against the last close</h3>
+        <div class="nl" id="hlLine"></div>
+        <p class="fn" id="hlCap"></p>
+        <details><summary>Show the table</summary><div class="scroll"><table id="hl"></table></div></details>
+      </div>
+      <div class="in ref">
+        <h3 data-k="daily">Last 30 trading days</h3>
+        <svg id="dailyPic" viewBox="0 0 600 230" role="img" aria-label="Daily moves and distance below the record over the last 30 trading days"></svg>
+        <details><summary>Show the table (30)</summary><div class="scroll" id="daily"></div></details>
+      </div>
     </div>
-  </div>
-
-  <section class="card" style="margin-top:14px"><h2 data-k="daily">Last 30 trading days</h2><div class="scroll" id="daily"></div></section>
+  </section>
 
   <p class="foot">A high counts as a turning point once the index closes the chosen size below it, and a low once it
     closes that size above it; a pullback smaller than the setting stays inside one swing. The newest turn is provisional
-    until the reversal completes. All-time highs use the full history. Daily closes from Yahoo Finance
+    until the reversal completes. Records use the full history since <span id="firstYear"></span>.<span id="caveat"></span> Daily closes from Yahoo Finance
     (<span id="src"></span>); a run during US market hours uses the live price as the last close. Not investment advice.</p>
 </main>
 
@@ -473,7 +497,7 @@ function render() {
   if (yrs.length) {
     const v = yrs.map(c => c.fwd[252]), lo = Math.floor(Math.min(-.6, ...v) * 10) / 10, hi = Math.ceil(Math.max(1.2, ...v) * 10) / 10;
     const at = x => ((x - lo) / (hi - lo) * 100).toFixed(1) + '%';
-    t4 = tile(`A year later, before${tip('year', 1)}`, `${v.filter(x => x > 0).length} of ${v.length} higher`, ink,
+    t4 = tile(`Higher a year later${tip('year', 1)}`, `${v.filter(x => x > 0).length} of ${v.length}`, ink,
       `a year after the past falls reached ${pc(ddNow, 0)}: from ${pc(Math.min(...v), 0)} to ${pc(Math.max(...v), 0)}.`,
       `<div class="mini"><i class="ln"></i><i class="zero" style="left:${at(0)}"></i>` +
       yrs.map(c => `<i class="dot" style="left:${at(c.fwd[252])};background:${c.fwd[252] >= 0 ? rise : fall}" title="${mon(c.peak)} fall: ${pc(c.fwd[252], 0)} a year on"></i>`).join('') + '</div>',
@@ -504,15 +528,15 @@ function render() {
     const key = span0 > 900 ? yr : span0 > 300 ? yr + Math.floor((mo - 1) / 3) : yr + mo;
     if (key !== prev) { if (prev !== null && (span0 > 300 || mo % 2)) { xt.push(dates[i]); xl.push(span0 > 900 ? yr : span0 > 300 ? `${MON[mo - 1]} '${yr.slice(2)}` : MON[mo - 1]); } prev = key; }
   }
-  // Swing labels: the biggest swings first, at most 14 (6 on a phone), none too close to another on the same side
+  // Swing labels: the current move and the 3 biggest (only the current one on a phone), none close to another; hover has the rest
   const shown = new Set();
   for (const w of [swings.at(-1), ...[...swings].sort((p, q) => Math.abs(q.move) - Math.abs(p.move))])
-    if (shown.size < (small ? 6 : 14) && ![...shown].some(v => (v.move > 0) === (w.move > 0) && Math.abs(v.b.i - w.b.i) < span0 * (small ? .2 : .08))) shown.add(w);
+    if (shown.size < (small ? 1 : 4) && ![...shown].some(v => Math.abs(v.b.i - w.b.i) < span0 * .15)) shown.add(w);
   const muted = css('--muted'), fallC = css('--fall'), riseC = css('--rise'), fallInk = css('--fall-ink');
   const sub = t => `<br><span style="font-size:10.5px;color:${muted}">${t}</span>`;
   const edge = w => w === swings.at(-1) ? 'right' : w.b.i - s0 < span0 * .06 ? 'left' : 'center';
   const notes = swings.filter(w => shown.has(w)).map(w => ({x: dates[w.b.i], y: Math.log10(C[w.b.i]), showarrow: false, xanchor: edge(w),
-    yanchor: w.move > 0 ? 'bottom' : 'top', yshift: w.move > 0 ? 7 : -7, font: {size: 11.5, color: w.move > 0 ? riseC : fallInk},
+    yanchor: w.move > 0 ? 'bottom' : 'top', yshift: w.move > 0 ? 12 : -12, bgcolor: 'rgba(255,255,255,.8)', font: {size: 11.5, color: w.move > 0 ? riseC : fallInk},
     text: `<b>${pc(w.move)}${w.b.prov ? ' so far' : ''}</b>` + (small ? '' : sub(`${span(w.cal)} · ${(w.pts >= 0 ? '+' : '−') + big(Math.abs(w.pts))}`) +
       (w.move < 0 && Math.abs(D.pctAth[w.b.i] - w.move) > .005 ? sub(`${pc(D.pctAth[w.b.i])} from the record`) : ''))}));
   // Hover text per day: close, distance below the record, and the swing it sits in
@@ -537,7 +561,8 @@ function render() {
   ];
   // Below the record, each day, on the same dates as the price
   const ddy = D.pctAth.slice(s0).map(v => v * 100), ddLo = Math.min(-5, Math.min(...ddy) * 1.3);
-  const nowLab = ddNow <= -.1, labels = D.falls.filter(f => f.low >= dates[s0] && !(nowLab && dates.indexOf(f.low) > N - 1 - span0 * (small ? .2 : .1))).map(f => ({x: f.low, y: f.depth, yref: 'y2', yanchor: 'top', yshift: -2, showarrow: false,
+  const nowLab = ddNow <= -.1, labels = D.falls.filter(f => f.low >= dates[s0] && !(nowLab && dates.indexOf(f.low) > N - 1 - span0 * .15))
+    .sort((a, b) => a.depth - b.depth).slice(0, small ? 0 : 3).map(f => ({x: f.low, y: f.depth, yref: 'y2', yanchor: 'top', yshift: -2, showarrow: false,
     text: `<b>−${Math.abs(f.depth).toFixed(0)}%</b>`, font: {size: 11, color: fallInk}}));
   if (nowLab) labels.push({x: dates[N - 1], y: ddNow * 100, yref: 'y2', xanchor: 'right', yanchor: 'top', yshift: -2, xshift: -4, showarrow: false, text: `<b>${pc(ddNow, 0)} now</b>`, font: {size: 11, color: fallInk}});
   labels.push({xref: 'paper', x: 0, xanchor: 'left', yref: 'paper', y: .22, yanchor: 'bottom', yshift: 4, showarrow: false, text: '<b>Below the record close</b>', font: {size: 12, color: css('--ink2'), family: 'system-ui,sans-serif'}},
@@ -587,7 +612,7 @@ function render() {
   $('typTitle').textContent = `A typical swing at ${Math.round(size * 100)}% reversals`;
   $('typical').innerHTML = `<div class="f"><strong>Falls · ${falls.length} in view</strong>${box(falls, 'deepest', Math.min)}</div><div class="r"><strong>Rises · ${rises.length} in view</strong>${box(rises, 'biggest', Math.max)}</div>`;
   const curMove = last / C[lp.i] - 1, ref = z.up ? rises : falls, beat = ref.filter(w => Math.abs(w.move) < Math.abs(curMove)).length;
-  $('typNote').textContent = ref.length ? `The current ${z.up ? 'rise' : 'fall'}, ${pc(curMove)} in ${N - 1 - lp.i} trading days, is ${z.up ? 'bigger' : 'deeper'} than ${beat} of the ${ref.length} finished ${z.up ? 'rises' : 'falls'} in view.` : '';
+  $('typNote').textContent = ref.length ? `The current ${z.up ? 'rise' : 'fall'}, ${pc(curMove)} in ${N - 1 - lp.i} trading days, is ${z.up ? 'bigger' : 'deeper'} than ${beat === ref.length ? 'all' : beat + ' of the'} ${ref.length} finished ${z.up ? 'rises' : 'falls'} in view.` : '';
 
   // Support and resistance from the turns in view: resistances highest first, then supports
   const lows = all.filter(p => p.type === 'L' && p.i >= s0 && C[p.i] < last).sort((a, b) => C[b.i] - C[a.i]).slice(0, 2);
@@ -609,15 +634,13 @@ function similarFalls() {
   $('simTitle').textContent = `The ${n} earlier falls that got to ${pc(S.now)}, since ${S.since}`;
   $('simIntro').textContent = `Today's fall took ${S.days} days to get here; ${F.length} of the ${n} got here as fast or faster. Read each row across: how it got here, how much further it fell, and where it stood a year later.`;
 
-  // Six stat cards: how many fell 5, 10, 20% further (and what that is today), total fall, a year later, back at the high
+  // Four stat cards: how many fell 5 and 10% further (20% and the total fall in the notes), a year later, back at the high
   const cnt = f => R.filter(r => -r.more >= f).length, lvl = f => money(last * (1 - f));
   const stat = (k, v, note) => `<div><small>${k}</small><b>${v}</b><span>${note}</span></div>`;
-  $('simLead').innerHTML = stat('Fell 5% more or worse', `${cnt(.05)} of ${n}`, `today that is ${lvl(.05)} or lower`) +
-    stat('Fell 10% more or worse', `${cnt(.10)} of ${n}`, `${lvl(.10)} or lower`) +
-    stat('Fell 20% more or worse', `${cnt(.20)} of ${n}`, `${lvl(.20)} or lower`) +
-    stat('Total fall', `${pc(Math.max(...R.map(r => r.depth)), 0)} to ${pc(Math.min(...R.map(r => r.depth)), 0)}`, `${R.filter(r => r.depth <= -0.3).length} of ${n} reached −30%`) +
+  $('simLead').innerHTML = stat('Fell 5% more or worse', `${cnt(.05)} of ${n}`, `today that is ${lvl(.05)} or lower; total falls ${pc(Math.max(...R.map(r => r.depth)), 0)} to ${pc(Math.min(...R.map(r => r.depth)), 0)}`) +
+    stat('Fell 10% more or worse', `${cnt(.10)} of ${n}`, `${lvl(.10)} or lower; ${cnt(.20)} of ${n} fell 20% more (${lvl(.20)})`) +
     (v1.length ? stat('Higher a year later', `${v1.filter(x => x > 0).length} of ${v1.length}`, `range ${pc(Math.min(...v1), 0)} to ${pc(Math.max(...v1), 0)}`) : '') +
-    stat('Back at the old high', `${toHigh.filter(x => x <= 365).length} of ${n} in a year`, `${toHigh.filter(x => x <= 730).length} of ${n} within two years`);
+    stat('Back at the old high in a year', `${toHigh.filter(x => x <= 365).length} of ${n}`, `${toHigh.filter(x => x <= 730).length} of ${n} within two years`);
 
   // One row per fall, newest first, with inline bars
   const maxHit = Math.max(...R.map(r => r.hitDays)), maxMore = Math.max(...R.map(r => -r.more));
@@ -628,7 +651,7 @@ function similarFalls() {
       <td class="b"><div><span class="fi">open</span></div></td><td class="m r">${pc(S.now)}</td><td class="m r">${money(last)}</td><td class="r">not yet</td><td class="m r">?</td></tr>` +
     R.slice().reverse().map(r => `<tr><td><b>${mon(r.peak)}</b>${fast(r) ? ' <small>as fast</small>' : ''}</td>
       <td class="b"><div><i style="width:${r.hitDays / maxHit * 120}px;background:#8A919C"></i><span>${r.hitDays} d</span></div></td>
-      <td class="b"><div><i style="width:${Math.max(2, -r.more / maxMore * 120)}px;background:var(--fall)"></i><span class="fi">${pc(r.more)} over ${span(r.moreDays)}</span></div></td>
+      <td class="b"><div><i style="width:${Math.max(2, -r.more / maxMore * 120)}px;background:var(--fall)"></i><span class="fi">${r.more > -.0005 ? 'barely (<0.1%)' : `${pc(r.more)} over ${span(r.moreDays)}`}</span></div></td>
       <td class="m r">${pc(r.depth)}</td><td class="m r">${money(D.athValue * (1 + r.depth))}</td><td class="r">${r.recover}</td>${yrCell(yr1[r.peak])}</tr>`).join('');
 
   $('simCount').textContent = n;
@@ -947,12 +970,12 @@ function backtestCard() {
       shp.push({type: 'line', xref: xa, yref: ya, x0: 0, x1: h, y0: 0, y1: 0, line: {color: css('--faint'), width: 1, dash: 'dot'}});
       ann.push({xref: xa + ' domain', yref: ya + ' domain', x: 0, y: 1, xanchor: 'left', yanchor: 'bottom', showarrow: false, align: 'left', font: {size: 11},
         text: cols === 2 ? `<b>${mon(r.peak)}</b> ${pc(r.depth, 0)}<br>${!g ? 'no guess' : !s ? 'not over yet' : `real ${pc(s.real, 0)} · miss ${(s.miss * 100).toFixed(0)}%`}`
-          : `<b>${mon(r.peak)} fall</b>, ${pc(r.depth)} on ${r.hit}<br>${!g ? 'no guess: fewer than 3 earlier falls' : !s ? 'not over yet' : `real ${pc(s.real)} · missed ${(s.miss * 100).toFixed(1)}%${s.pos ? ' · ' + s.pos : ''}`}`});
+          : `<b>${mon(r.peak)} fall</b>, ${pc(r.depth)} on ${dl(r.hit)}<br>${!g ? 'no guess: fewer than 3 earlier falls' : !s ? 'not over yet' : `real ${pc(s.real)} · missed ${(s.miss * 100).toFixed(1)}%${s.pos ? ' · ' + s.pos : ''}`}`});
     });
     const ax = {};
     R.forEach((_, i) => { const n = i ? i + 1 : '';
       ax['xaxis' + n] = {range: [0, h], showgrid: false, tickfont: {size: 9}, ticksuffix: 'd', nticks: 4};
-      ax['yaxis' + n] = {range: [lo - pad, hi + pad], tickformat: '+.0%', gridcolor: css('--line'), tickfont: {size: 9}, nticks: 4}; });
+      ax['yaxis' + n] = {range: [lo - pad, hi + pad], tickformat: '+.0%', gridcolor: css('--line'), tickfont: {size: 9}, nticks: 4, showticklabels: !(i % cols)}; });
     Plotly.react('btChart', tr, {height: rows * 175 + 20, showlegend: false, margin: {l: 44, r: 10, t: 34, b: 24}, paper_bgcolor: 'rgba(0,0,0,0)', plot_bgcolor: 'rgba(0,0,0,0)',
       grid: {rows, columns: cols, pattern: 'independent', ygap: .5, xgap: cols === 2 ? .3 : .12}, annotations: ann, shapes: shp, hovermode: 'closest', ...ax}, {responsive: true, displayModeBar: false});
     // Summary: each method over the falls it has a guess for
@@ -971,6 +994,11 @@ function backtestCard() {
       S.map(x => `<tr style="${x === top ? 'font-weight:700' : ''}"><td><span style="color:${W[x.w][1]}">&#9632;</span> ${W[x.w][0]}${x === top ? ' (lowest miss)' : ''}</td><td class="r">${x.n}</td>
         <td class="r">${x.miss === null ? '-' : (x.miss * 100).toFixed(1) + '%'}</td><td class="r">${x.nb ? `${x.inside} of ${x.nb}` : 'no band'}</td>
         <td class="r ${x.gap > 0 ? 'pos' : 'neg'}">${x.gap === null ? '-' : `${pc(x.gap)} (real ${x.gap > 0 ? 'better' : 'worse'})`}</td><td class="r">${full.length ? `${wins[x.w]} of ${full.length}` : '-'}</td></tr>`).join('');
+    const maxM = Math.max(...ok.map(x => x.miss));
+    $('btBarsCap').textContent = `Average miss of the middle guess over ${lbl}, by method. Shorter bar = closer.`;
+    $('btBars').innerHTML = S.map(x => `<span class="n${x === top ? ' best' : ''}"><i class="sw" style="background:${W[x.w][1]}"></i>${W[x.w][0]}${x === top ? ' (lowest miss)' : ''}</span>` +
+      `<div>${x.miss === null ? '' : `<i style="width:${(x.miss / maxM * 100).toFixed(1)}%;background:${W[x.w][1]}"></i>`}</div>` +
+      `<span class="m${x === top ? ' best' : ''}">${x.miss === null ? 'no score' : `${(x.miss * 100).toFixed(1)}%${full.length ? ` · closest ${wins[x.w]} of ${full.length}` : ''}`}</span>`).join('');
     $('btNote').textContent = `Head to head: only the ${full.length} falls where all five methods had a guess and the span is over. Bands: past deeper falls lowest to highest case, the others 10% to 90% of paths. ` +
       'Shallower falls that turned assumes the bottom is in, so it leans high; trend continues just extends the last 60 days. Few falls and shared events: small gaps are noise.';
     $('btTable').innerHTML = `<tr><th>Fall from the high of</th><th>Got to ${pc(B.now)} on</th><th class="r">Depth that day</th><th class="r">Bottom</th><th class="r">Real after ${lbl}</th>` +
@@ -1022,7 +1050,7 @@ function rankFalls() {
       const d = days(f.peak, f.now ? dates[N - 1] : f.low);
       return `<span class="l">${f.now ? `<b>Now · ${mon(f.peak)}</b>` : mon(f.peak)}</span>` +
         `<div><i style="width:${-f.depth / maxDep * 150}px;background:var(--fall)"></i><span>−${(-f.depth).toFixed(1)}% in ${span(d)}${f.now ? ' so far' : ''}</span></div>` +
-        `<div>${f.back ? `<i style="width:${Math.max(2, rec(f) / maxRec * 150)}px;background:var(--rise)"></i><span>${span(rec(f))} (${dl(f.back)})</span>` : '<span>not back yet</span>'}</div>`;
+        `<div>${f.back ? `<i style="width:${Math.max(2, rec(f) / maxRec * 150)}px;background:var(--rise)"></i><span>back in ${span(rec(f))} (${dl(f.back)})</span>` : '<span>not back yet</span>'}</div>`;
     }).join('');
     [...$('rankSpan').querySelectorAll('button')].forEach(b => b.setAttribute('aria-pressed', +b.dataset.v === yrs));
     [...$('rankFrom').querySelectorAll('button')].forEach(b => b.setAttribute('aria-pressed', b.dataset.v === from));
@@ -1050,9 +1078,71 @@ $('src').textContent = D.ticker;
 $('switch').innerHTML = [...new Set(D.pages.map(p => p.group))].map(g => `<optgroup label="${g}">` +
   D.pages.filter(p => p.group === g).map(p => `<option value="${p.href}"${p.here ? ' selected' : ''}>${p.name}</option>`).join('') + '</optgroup>').join('');
 $('falls').innerHTML = D.fallsTable; $('fallsCount').textContent = $('falls').querySelectorAll('tbody tr').length; $('daily').innerHTML = D.dailyTable;
-$('facts').innerHTML = D.facts.map(([k, v]) => `<dt>${k}</dt><dd>${v}</dd>`).join('');
-$('hl').innerHTML = '<tr><th>Compared with</th><th class="r">Level</th><th>Set on</th><th class="r">Last close</th></tr>' +
-  D.highsLows.map(h => `<tr><td>${h.label}</td><td class="r">${money(h.value)}</td><td>${h.date}</td><td class="r ${cls(h.pct)}">${pc(h.pct, 2)}</td></tr>`).join('');
+$('facts').innerHTML = D.facts.map(([k, v]) => `<dt>${k}</dt><dd>${String(v).replace(/\b\d{4}-\d{2}-\d{2}\b/g, dl)}</dd>`).join('');
+// The saved highs and lows leave out the last close: a low above it (or a high below it) is the last close itself
+D.highsLows.forEach(h => { if (/low/i.test(h.label) ? h.value > C[N - 1] : h.value < C[N - 1]) Object.assign(h, {value: C[N - 1], date: dates[N - 1], pct: 0, now: true}); });
+$('hl').innerHTML = '<tr><th>Compared with</th><th class="r">Level</th><th>Set on</th><th class="r">Last close vs it</th></tr>' +
+  D.highsLows.map(h => `<tr><td>${h.label}${h.now ? ' (now: the last close)' : ''}</td><td class="r">${money(h.value)}</td><td>${dl(h.date)}</td><td class="r ${cls(h.pct)}">${pc(h.pct, 2)}</td></tr>`).join('');
+{
+  // Number line: highs and lows, the 5-year range ends and the last close; levels within 0.05% share one mark
+  const last = C[N - 1], f0 = Math.max(N - 1260, 0), five = C.slice(f0), lo5 = Math.min(...five), hi5 = Math.max(...five);
+  const iLo = f0 + five.indexOf(lo5), iHi = f0 + five.indexOf(hi5), marks = [];
+  for (const [label, v] of [['Last close', last], ...D.highsLows.map(h => [h.label, h.value]), ['5-year low', lo5], ['5-year high', hi5]]) {
+    const m = marks.find(m => Math.abs(m.v / v - 1) < .0005);
+    if (m) m.labels.push(label); else marks.push({v, labels: [label]});
+  }
+  marks.sort((a, b) => a.v - b.v);
+  const hMin = Math.min(...marks.map(m => m.v)) * .985, hMax = Math.max(...marks.map(m => m.v)) * 1.01;
+  $('hlLine').innerHTML = '<i class="tk"></i>' + marks.map((m, k) => {
+    const t = m.labels.join(', '), c = m.labels.includes('Last close') ? css('--ink') : /high/.test(t) ? css('--rise') : css('--fall-ink');
+    const at = ((m.v - hMin) / (hMax - hMin) * 100).toFixed(2) + '%';
+    const name = t.replace(/(.), (.)/g, (x, a, b) => `${a}, ${b.toLowerCase()}`);
+    return `<i class="mk" style="left:${at};background:${c}"></i><span style="color:${c}" data-x="${(m.v - hMin) / (hMax - hMin)}">${name}<br><b>${big(m.v)}</b></span>`;
+  }).join('');
+  // Labels: one above the line, then as many rows below as needed so none overlap
+  const box = $('hlLine'), W = box.clientWidth, ends = [], lanes = [];
+  box.querySelectorAll('span').forEach(e => {
+    const x = e.dataset.x * W, w = e.offsetWidth, h = e.offsetHeight;
+    const l = e.dataset.x > .75 ? Math.min(x + 8, W + 30) - w : e.dataset.x < .25 ? Math.max(x - 8, -30) : Math.min(Math.max(x - w / 2, -30), W + 30 - w);
+    e.style.textAlign = e.dataset.x > .75 ? 'right' : e.dataset.x < .25 ? 'left' : 'center';
+    let L = h <= 44 ? 0 : 1;
+    while (ends[L] != null && ends[L] + 8 > l) L++;
+    ends[L] = l + w; (lanes[L] = lanes[L] || []).push(e); e.style.left = l + 'px';
+  });
+  (lanes[0] || []).forEach(e => e.style.top = (42 - e.offsetHeight) + 'px');
+  let y = 68;
+  lanes.slice(1).forEach(row => { row.forEach(e => e.style.top = y + 'px'); y += Math.max(...row.map(e => e.offsetHeight)) + 4; });
+  box.style.height = Math.max(108, y) + 'px';
+  $('hlCap').textContent = `Last close sits at ${Math.round((last - lo5) / (hi5 - lo5) * 100)}% of the 5-year range (low ${big(lo5)} on ${dl(dates[iLo])}, high ${big(hi5)} on ${dl(dates[iHi])}).`;
+
+  // Last 30 trading days: move on the day as bars, distance below the record as an area
+  const pic = $('dailyPic'), VW = Math.max(300, Math.round(pic.clientWidth) || 600), PW = VW - 40;
+  pic.setAttribute('viewBox', `0 0 ${VW} 230`);
+  const ks = [...Array(30).keys()].map(k => N - 30 + k), bw = PW / 30;
+  const mv = ks.map(i => C[i] / C[i - 1] - 1), dd = ks.map(i => D.pctAth[i]);
+  const maxAbs = Math.max(...mv.map(Math.abs)), ddLo = Math.min(-.05, ...dd), rise = css('--rise'), fall = css('--fall'), fink = css('--fall-ink');
+  const sday = s => `${+s.slice(8, 10)} ${MON[+s.slice(5, 7) - 1]}`;
+  const bars = mv.map((v, k) => { const h = Math.max(Math.abs(v) / maxAbs * 52, .5);
+    return `<rect x="${(k * bw + 1).toFixed(1)}" y="${(v >= 0 ? 72 - h : 72).toFixed(1)}" width="${(bw - 2).toFixed(1)}" height="${h.toFixed(1)}" rx="1" fill="${v >= 0 ? rise : fall}"><title>${dl(dates[ks[k]])}: ${pc(v, 2)}</title></rect>`; });
+  const note = k => { const v = mv[k], h = Math.abs(v) / maxAbs * 52, endA = k >= 24, startA = k < 6;
+    return `<text x="${(endA ? (k + 1) * bw : startA ? k * bw : k * bw + bw / 2).toFixed(1)}" y="${(v >= 0 ? 72 - h - 4 : 72 + h + 12).toFixed(1)}" font-size="11" font-weight="600" fill="${v >= 0 ? rise : fink}" text-anchor="${endA ? 'end' : startA ? 'start' : 'middle'}">${pc(v, 1)} ${sday(dates[ks[k]])}</text>`; };
+  const kMax = mv.indexOf(Math.max(...mv)), kMin = mv.indexOf(Math.min(...mv));
+  const py = v => 156 + v / ddLo * 50, px = k => k * bw + bw / 2;
+  const area = `M${px(0).toFixed(1)},156 ` + dd.map((v, k) => `L${px(k).toFixed(1)},${py(v).toFixed(1)}`).join(' ') + ` L${px(29).toFixed(1)},156Z`;
+  $('dailyPic').innerHTML = `<text x="0" y="12" font-size="11" font-weight="600" fill="${css('--ink2')}">Move on the day</text>` +
+    `<line x1="0" x2="${PW}" y1="72" y2="72" stroke="#C9CDD3"/>` + bars.join('') + note(kMax) + (kMin !== kMax ? note(kMin) : '') +
+    `<text x="0" y="146" font-size="11" font-weight="600" fill="${css('--ink2')}">Below the record</text>` +
+    `<line x1="0" x2="${PW}" y1="156" y2="156" stroke="${css('--gold')}" stroke-dasharray="4 3"/>` +
+    `<path d="${area}" fill="${fall}" fill-opacity=".16" stroke="${fall}" stroke-width="1.2"/>` +
+    `<text x="${VW}" y="${(py(dd[29]) + 4).toFixed(1)}" font-size="11" font-weight="600" fill="${fink}" text-anchor="end">${pc(dd[29], 1)}</text>` +
+    `<text x="0" y="226" font-size="11" fill="${css('--muted')}">${dl(dates[ks[0]])}</text>` +
+    `<text x="${PW}" y="226" font-size="11" fill="${css('--muted')}" text-anchor="end">${dl(dates[N - 1])}</text>`;
+
+  // Footer
+  $('firstYear').textContent = (D.rank || []).reduce((m, f) => f.peak < m ? f.peak : m, dates[0]).slice(0, 4);
+  const R = D.similar && D.similar.rows;
+  if (R && R.length) $('caveat').textContent = ` Past-fall scenarios and daily guesses replay what happened next before; they are guesses, not predictions or evidence: with ${R.length} cases, one fall can swing every summary.`;
+}
 const btn = (v, txt) => `<button type="button" data-v="${v}">${txt}</button>`;
 $('sizes').insertAdjacentHTML('beforeend', SIZES.map(v => btn(v, Math.round(v * 100) + '%')).join(''));
 $('years').insertAdjacentHTML('beforeend', YEARS.map(v => btn(v, v + 'Y')).join(''));
