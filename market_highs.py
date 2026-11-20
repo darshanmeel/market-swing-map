@@ -242,6 +242,8 @@ def page_data(t, d, eps, pages, name):
         "athValue": float(d.high_ATH.iloc[-1]), "athDate": str(d.prev_ath_date.iloc[-1].date()),
         "falls": [{"low": str(e["Low on"]), "depth": float(e["Depth %"]), "text": e["Fall"]} for _, e in big.iterrows()],
         "fallsTable": eps[eps["Depth %"] <= -BIG_FALL][cols].iloc[::-1].to_html(index=False, border=0, na_rep="-"),
+        "rank": [{"peak": str(e["Peak on"]), "low": str(e["Low on"]), "depth": float(e["Depth %"]), "now": e.Status != "reversed"}
+                 for _, e in episodes(d, d.index[0]).iterrows() if e["Depth %"] <= -BIG_FALL or e.Status != "reversed"],
         "dailyTable": daily_table(d), "highsLows": highs_lows(d), "facts": facts(d, eps), "similar": similar(d), "track": track(name, d),
     }
 

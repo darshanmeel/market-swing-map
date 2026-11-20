@@ -115,6 +115,13 @@ dl{display:grid;grid-template-columns:max-content 1fr;gap:5px 14px;margin:0;font
     <div id="dd" style="height:300px"></div>
   </section>
 
+  <section class="card" style="margin-top:14px" id="rankCard">
+    <h2 data-k="rank">How bad is this fall? Every fall of 10% or more from a record</h2>
+    <p class="kicker" id="rankLead" style="margin:4px 0 10px"></p>
+    <div class="seg" id="rankSpan"><span>Show</span><button type="button" data-v="10">Last 10 years</button><button type="button" data-v="0">All time</button></div>
+    <div id="rank" style="margin-top:8px"></div>
+  </section>
+
   <section class="card" style="margin-top:14px" id="simCard">
     <div class="top"><h2 data-k="sim"><span id="simTitle"></span></h2>
       <div class="legend"><span><i style="background:var(--fall)"></i>Got this deep as fast as today, or faster</span>
@@ -217,6 +224,7 @@ const TIPS = {
   facts: 'Today\'s fall in context: how long since the record, when it was last this far down, how earlier falls this deep ended, and the last big fall that finished.',
   hl: 'Today\'s price against the record high and the highest and lowest closes of the last year and 6 months. Negative: below that level. Positive: above it.',
   test: 'A check of this page against history. For each past fall, go back to the day it first got as deep as today, and work out the outcome range using only the falls that came before it. Then compare with what really happened. Call: did most earlier falls point the right way (higher or lower a year on), and did the real result land inside their range. Green: right way and inside the range. Red: wrong way. Many red rows mean history is a weak guide here.',
+  rank: 'Every fall of 10% or more from an all-time high, deepest first. Grey: past falls at their full depth, high to low. Orange: the current fall so far, with a dotted line at its depth. Grey bars that pass the line went deeper than today. Switch between the last 10 years and all the history there is. Depth is from the record close, not from the last swing high.',
   track: 'One saved guess per weekday. Each guess takes the past falls (up to 8) that got as deep as that day at the most similar speed, and replays what each did next from that day\'s close for a year: one coloured line per past fall. The thick black line is what really happened after the guess day, added after every close. Pick an older date to see how that guess is doing, and 1 week to 1 year to zoom in or out. Inside: reality is still within the scenarios. Below or above: it is doing worse or better than all of them, the sign that this fall is different. Closest scenario: the past fall it has followed most closely so far.',
   daily: 'Each of the last 30 trading days: the close, the change that day, and how far it was from the record high and the 1-year and 6-month highs and lows.',
 };
@@ -288,7 +296,8 @@ function render() {
   for (const w of [swings.at(-1), ...[...swings].sort((p, q) => Math.abs(q.move) - Math.abs(p.move))])
     if (shown.size < 16 && ![...shown].some(v => (v.move > 0) === (w.move > 0) && Math.abs(v.b.i - w.b.i) < (N - s0) * 0.1)) shown.add(w);
   const notes = swings.filter(w => shown.has(w)).map(w => ({x: dates[w.b.i], y: Math.log10(C[w.b.i]), showarrow: false, yshift: w.move > 0 ? 20 : -20,
-    text: `${pc(w.move)} (${pts(w.pts)})<br>${span(w.cal)}${w.b.prov ? ' so far' : ''}`, font: {size: 10, color: w.move > 0 ? css('--rise') : css('--fall')}, bgcolor: 'rgba(255,255,255,.85)'}));
+    text: `${pc(w.move)} (${pts(w.pts)})<br>${span(w.cal)}${w.b.prov ? ' so far' : ''}` +
+      (w.move < 0 && Math.abs(D.pctAth[w.b.i] - w.move) > .005 ? `<br><b>${pc(D.pctAth[w.b.i])} from the record</b>` : ''), font: {size: 10, color: w.move > 0 ? css('--rise') : css('--fall')}, bgcolor: 'rgba(255,255,255,.85)'}));
   const traces = [
     {x, y, type: 'scatter', mode: 'lines', line: {color: '#A3A9B3', width: 1}, hovertemplate: '%{x}: %{y:,.2f}<extra></extra>', name: 'close'},
     {x: r.X, y: r.Y, mode: 'lines', line: {color: css('--rise'), width: 2}, hoverinfo: 'skip', name: 'rise'},
@@ -297,7 +306,8 @@ function render() {
      line: {color: css('--muted'), width: 1.5, dash: 'dot'}, hoverinfo: 'skip', name: 'provisional'},
     {x: dots.map(p => dates[p.i]), y: dots.map(p => C[p.i]), mode: 'markers', name: 'turns',
      marker: {size: 7, color: dots.map(p => p.tag === 'ATH' ? css('--gold') : p.type === 'H' ? css('--fall') : css('--rise')), line: {color: '#fff', width: 1}},
-     text: dots.map(p => { const w = byEnd.get(p.i); return `${p.type === 'H' ? 'High' : 'Low'} ${p.tag}` + (w ? `<br>${w.move > 0 ? 'Rise' : 'Fall'} ${pc(w.move)}, ${pts(w.pts)}, in ${span(w.cal)}<br>from ${dates[w.a.i]} (${money(C[w.a.i])})` : ''); }),
+     text: dots.map(p => { const w = byEnd.get(p.i); return `${p.type === 'H' ? 'High' : 'Low'} ${p.tag}` + (w ? `<br>${w.move > 0 ? 'Rise' : 'Fall'} ${pc(w.move)}, ${pts(w.pts)}, in ${span(w.cal)}<br>from ${dates[w.a.i]} (${money(C[w.a.i])})` : '') +
+       `<br>${pc(D.pctAth[p.i])} from the all-time high`; }),
      hovertemplate: '%{text}<br>%{x}: %{y:,.2f}<extra></extra>'},
   ];
   Plotly.react('price', traces, {margin: {l: 60, r: 14, t: 8, b: 30}, showlegend: false, paper_bgcolor: 'rgba(0,0,0,0)', plot_bgcolor: 'rgba(0,0,0,0)',
@@ -349,7 +359,7 @@ function similarFalls() {
   const head = (x, text) => ({xref: 'paper', yref: 'paper', x, y: 1, yanchor: 'bottom', yshift: 8, xanchor: 'left', showarrow: false, text: `<b>${text}</b>`});
   Plotly.react('paths', [
     bar(R.map(() => at), grey, 'x', {hovertemplate: R.map(r => `High ${r.peak}: first at ${pc(S.now)} on day ${r.hitDays}<extra></extra>`)}),
-    bar(tot.map(x => x - at), col, 'x', {text: R.map(r => `${pc(r.depth)} total (${pc(r.more)} more)`), textposition: 'outside',
+    bar(tot.map(x => x - at), col, 'x', {text: R.map(r => `${pc(r.depth)} total (then ${pc(r.more)} from the ${pc(S.now)} level)`), textposition: 'outside',
       hovertemplate: R.map(r => `High ${r.peak}: ${pc(S.now)}, then ${pc(r.more)} more from there; ${pc(r.depth)} in total by ${r.low}<extra></extra>`)}),
     bar(R.map(r => Math.min(r.hitDays, dayCap)), grey, 'x2', {hovertemplate: R.map(r => `${span(r.hitDays)} from the high to ${pc(S.now)}<extra></extra>`)}),
     bar(R.map(r => Math.max(0, Math.min(r.hitDays + r.moreDays, dayCap) - Math.min(r.hitDays, dayCap))), col, 'x2',
@@ -548,6 +558,36 @@ function trackRecord() {
       <td>${g.near ? mon(g.near) + ' fall' : ''}</td><td>${g.why || ''}</td></tr>`).join('');
 }
 trackRecord();
+
+// Today's fall ranked against every fall of 10% or more from a record
+function rankFalls() {
+  const A = D.rank || [];
+  if (!A.some(f => f.now)) { $('rankCard').hidden = true; return; }  // at or near the record: nothing to rank
+  const mon = d => new Date(d).toLocaleDateString('en-GB', {month: 'short', year: 'numeric'});
+  let yrs = 10;
+  function show() {
+    const from = new Date(dates[N - 1]); from.setFullYear(from.getFullYear() - yrs);
+    const R = A.filter(f => !yrs || f.now || new Date(f.peak) >= from).sort((a, b) => a.depth - b.depth);
+    const cur = R.find(f => f.now), worse = R.filter(f => !f.now && f.depth < cur.depth).length, past = R.length - 1;
+    $('rankLead').innerHTML = `<b>Today ${pc(cur.depth / 100)}: ${worse} of ${past} past falls ${yrs ? 'in the last 10 years' : 'on record'} went deeper</b>` +
+      `; ${past - worse} stopped before this point. Past falls show their full depth; today's is ${cur.depth > -10 ? 'still under 10%' : 'so far'}.`;
+    const lbl = R.map(f => f.now ? '<b>Now</b>' : `${mon(f.peak)}`);
+    $('rank').style.height = `${50 + R.length * 22}px`;
+    Plotly.react('rank', [{type: 'bar', orientation: 'h', y: lbl, x: R.map(f => -f.depth), cliponaxis: false,
+      marker: {color: R.map(f => f.now ? css('--fall') : '#AEB4BD')}, text: R.map(f => `−${(-f.depth).toFixed(1)}%`), textposition: 'outside',
+      hovertemplate: R.map(f => `${f.now ? 'Now: ' : ''}high ${f.peak}, low ${f.low}: ${pc(f.depth / 100)}<extra></extra>`)}],
+      {height: 50 + R.length * 22, margin: {l: 80, r: 50, t: 8, b: 30}, showlegend: false, bargap: .3,
+       paper_bgcolor: 'rgba(0,0,0,0)', plot_bgcolor: 'rgba(0,0,0,0)',
+       yaxis: {type: 'category', autorange: 'reversed', automargin: true},
+       xaxis: {ticksuffix: '%', tickprefix: '−', gridcolor: css('--line'), range: [0, -R[0].depth * 1.12]},
+       shapes: [{type: 'line', yref: 'paper', y0: 0, y1: 1, x0: -cur.depth, x1: -cur.depth, line: {color: css('--fall'), width: 1, dash: 'dot'}}]},
+      {responsive: true, displayModeBar: false});
+    [...$('rankSpan').querySelectorAll('button')].forEach(b => b.setAttribute('aria-pressed', +b.dataset.v === yrs));
+  }
+  $('rankSpan').onclick = e => { if (e.target.dataset.v) { yrs = +e.target.dataset.v; show(); } };
+  show();
+}
+rankFalls();
 
 // Static parts
 document.querySelectorAll('h2[data-k]').forEach(h => h.insertAdjacentHTML('beforeend', tip(h.dataset.k)));
