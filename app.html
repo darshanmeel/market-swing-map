@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>__TITLE__</title>
+<title>Swing map</title>
 <script src="plotly.min.js"></script>
 <style>
 :root{--ground:#F6F6F3;--card:#fff;--ink:#15181D;--ink2:#4A505C;--muted:#5A6170;--faint:#8A919C;--line:#E3E5E8;--line2:#EEF0F2;--chip:#D5D8DD;
@@ -364,9 +364,30 @@ i.sw{display:inline-block;width:12px;height:12px;border-radius:2px;flex:none}
     (<span id="src"></span>); a run during US market hours uses the live price as the last close. Not investment advice.</p>
 </main>
 
-<script id="data" type="application/json">__DATA__</script>
 <script>
-const D = JSON.parse(document.getElementById('data').textContent);
+// One page for every market: app.html?m=<slug> loads data/<slug>.js (window.D = {...}), written by market_highs.py.
+// A <script src> rather than fetch(), which does not work on pages opened from disk.
+const M = new URLSearchParams(location.search).get('m') || 'ixic';
+function missing() {
+  document.title = 'Swing map: no data';
+  const p = document.createElement('p');
+  p.className = 'verdict';
+  p.textContent = /^[a-z0-9_.-]+$/.test(M)
+    ? `No data for "${M}" yet (data/${M}.js). Build it from this folder with: python market_highs.py (every market) or python market_highs.py "${M.toUpperCase()}" (just this one). "${M}" is the Yahoo symbol in lower case without its ^ and with _ for signs such as =, so an index needs the ^ back ("^GSPC" for gspc) and gc_f is "GC=F".`
+    : 'Unknown market. Pick one with app.html?m=<name>, for example app.html?m=ixic.';
+  if (M !== 'ixic') p.append(' ', Object.assign(document.createElement('a'), {href: 'app.html', textContent: 'Back to the Nasdaq Composite'}));
+  document.querySelector('main').replaceChildren(p);
+}
+if (/^[a-z0-9_.-]+$/.test(M)) {
+  const s = document.createElement('script');
+  s.src = `data/${M}.js`;
+  s.onload = () => window.D ? page(window.D) : missing();
+  s.onerror = missing;
+  document.body.append(s);
+} else missing();
+
+function page(D) {
+document.title = `Swing map: ${D.name}`;
 const SIZES = [0.03, 0.05, 0.08, 0.10, 0.15, 0.20], YEARS = [1, 3, 5, 10];
 let size = 0.05, years = 5;
 const C = D.close, N = C.length, dates = D.dates;
@@ -1152,6 +1173,7 @@ render();
 // Section pills: hide the ones whose section is hidden
 if (['trackSub', 'testSub', 'btSub'].every(id => $(id).hidden)) $('trust').hidden = true;
 $('nav').querySelectorAll('a').forEach(a => { const t = $(a.hash.slice(1)); a.hidden = !t || t.hidden; });
+}
 </script>
 </body>
 </html>

@@ -27,10 +27,10 @@ a{color:var(--rise)}
 <body>
 <main>
 <h1>Market swing map</h1>
-<p class="lede">One offline page per market: how far it is below its all-time high, its real turning points, and what
+<p class="lede">One offline page for every market: how far it is below its all-time high, its real turning points, and what
 every past fall this deep did next. Each weekday after the close a new guess, a year ahead, is saved and scored against
 what really happens.</p>
-<p>It covers about 145 markets, grouped in the <b>Market</b> list at the top of any page:</p>
+<p>It covers about 145 markets, grouped in the <b>Market</b> list at the top of the page:</p>
 <ul>
 <li><b>Indices:</b> Nasdaq Composite, Nasdaq-100, S&amp;P 500, Dow Jones, Dow Transports, Russell 2000, NYSE Composite,
 DAX 40, FTSE 100, CAC 40, Euro Stoxx 50, Stoxx Europe 600, Nikkei 225, KOSPI, Hang Seng, Shanghai Composite, Sensex,
@@ -49,24 +49,33 @@ python market_highs.py              # every market (10-20 minutes)
 python market_highs.py "^IXIC" "^GSPC"  # only these (Yahoo symbols)</code></pre>
 <p>Run it from this folder. Quote symbols that start with <code>^</code>: in Windows <code>cmd</code> an unquoted <code>^</code> is dropped.
 A run for only some markets rewrites <code>market_highs.csv</code> with just those markets; the next full run fills it again.</p>
-<p>Then open <code>highs_ixic.html</code> (or any <code>highs_*.html</code>) in a browser. The pages work offline;
-<code>plotly.min.js</code> is written next to them on every run. Generated pages are not kept in git; each machine builds its own.</p>
+<p>Then open <code>app.html</code> in a browser (the Nasdaq Composite), or pick a market with <code>?m=</code>:
+<code>app.html?m=gspc</code>. <code>highs_ixic.html</code> and the other <code>highs_*.html</code> still work and open the same page.
+It works offline; <code>plotly.min.js</code> is written next to it on every run. The data files are not kept in git; each machine builds its own.
+A market not built yet shows a short note with the command to build it.</p>
+<p><b>Add a company or index:</b> add its Yahoo symbol and name to <code>COMPANIES</code> (or <code>NAMES</code> for an index) in
+<code>market_highs.py</code>, then run <code>python market_highs.py "NFLX"</code>. Only the new market's history is downloaded;
+the 23:00 run includes it from then on, and the other markets' menus list it after their next rebuild.</p>
 
 <h2>How it works</h2>
-<svg viewBox="0 0 820 150" role="img" aria-label="Flow: Yahoo Finance daily closes go into market_highs.py, which writes one page per market from swing_template.html, a CSV of today's numbers, and one saved guess per market per day in predictions/">
+<svg viewBox="0 0 820 200" role="img" aria-label="Flow: Yahoo Finance daily closes go into market_highs.py, which writes one data file per market in data/, shown by app.html, plus a redirect page per market, a CSV of today's numbers, and one saved guess per market per day in predictions/">
   <style>.b{fill:var(--card,#fff);stroke:#C9CDD3}.t{font:14px system-ui,sans-serif;fill:currentColor}.s{font:12px system-ui,sans-serif;fill:#5E6673}.a{stroke:#8B939E;stroke-width:1.5;fill:none;marker-end:url(#h)}</style>
   <defs><marker id="h" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0L10,5L0,10z" fill="#8B939E"/></marker></defs>
-  <rect class="b" x="10" y="50" width="160" height="50" rx="8"/><text class="t" x="90" y="72" text-anchor="middle">Yahoo Finance</text><text class="s" x="90" y="90" text-anchor="middle">full daily history</text>
-  <rect class="b" x="240" y="50" width="180" height="50" rx="8"/><text class="t" x="330" y="72" text-anchor="middle">market_highs.py</text><text class="s" x="330" y="90" text-anchor="middle">+ swing_template.html</text>
-  <rect class="b" x="500" y="6" width="310" height="40" rx="8"/><text class="t" x="655" y="31" text-anchor="middle">highs_&lt;market&gt;.html (one per market)</text>
-  <rect class="b" x="500" y="56" width="310" height="40" rx="8"/><text class="t" x="655" y="81" text-anchor="middle">predictions/&lt;market&gt;.json (a guess a day)</text>
-  <rect class="b" x="500" y="106" width="310" height="40" rx="8"/><text class="t" x="655" y="131" text-anchor="middle">market_highs.csv (today's numbers)</text>
-  <path class="a" d="M170 75H236"/><path class="a" d="M420 70L496 28"/><path class="a" d="M420 75H496"/><path class="a" d="M420 80L496 124"/>
+  <rect class="b" x="240" y="75" width="180" height="50" rx="8"/><text class="t" x="330" y="97" text-anchor="middle">market_highs.py</text><text class="s" x="330" y="115" text-anchor="middle">data/closes.csv store</text>
+  <rect class="b" x="500" y="6" width="310" height="40" rx="8"/><text class="t" x="655" y="31" text-anchor="middle">data/&lt;market&gt;.js → app.html?m=&lt;market&gt;</text>
+  <rect class="b" x="500" y="56" width="310" height="40" rx="8"/><text class="t" x="655" y="81" text-anchor="middle">highs_&lt;market&gt;.html (redirect to it)</text>
+  <rect class="b" x="500" y="106" width="310" height="40" rx="8"/><text class="t" x="655" y="131" text-anchor="middle">predictions/&lt;market&gt;.json (a guess a day)</text>
+  <rect class="b" x="500" y="156" width="310" height="40" rx="8"/><text class="t" x="655" y="181" text-anchor="middle">market_highs.csv (today's numbers)</text>
+  <rect class="b" x="10" y="75" width="160" height="50" rx="8"/><text class="t" x="90" y="97" text-anchor="middle">Yahoo Finance</text><text class="s" x="90" y="115" text-anchor="middle">latest daily closes</text>
+  <path class="a" d="M170 100H236"/><path class="a" d="M420 90L496 28"/><path class="a" d="M420 96L496 76"/><path class="a" d="M420 104L496 124"/><path class="a" d="M420 110L496 174"/>
 </svg>
-<p>All the history maths runs in Python once per run; the page only redraws charts when a setting changes.
+<p>The script writes each market's numbers to <code>data/&lt;market&gt;.js</code>. <code>app.html</code> is one page for
+every market: it reads <code>?m=&lt;market&gt;</code> (default <code>ixic</code>), loads that file and draws the charts,
+so building only some markets leaves the others as they were.
+All the history maths runs in Python once per run; the page only redraws charts when a setting changes.
 All-time highs use the full history Yahoo has for each market, so a high is a real record, not just the top of the shown window.</p>
 
-<h2>What each page shows</h2>
+<h2>What the page shows</h2>
 <table>
 <tr><th>Section</th><th>What it answers</th></tr>
 <tr><td>Top tiles</td><td>Last close, distance from the all-time high, the current swing, trend shape (higher or lower highs and lows), and where today sits in its 5-year range.</td></tr>
@@ -129,9 +138,11 @@ WTI's negative closes of April 2020 are dropped, since % moves and a log scale n
 <h2>Files</h2>
 <table>
 <tr><th>File</th><th>What it is</th></tr>
-<tr><td><code>market_highs.py</code></td><td>Downloads the closes, works out highs, falls, similar cases and guesses, writes the pages.</td></tr>
-<tr><td><code>swing_template.html</code></td><td>The page: layout, charts and tooltips. The script fills in the data.</td></tr>
-<tr><td><code>highs_*.html</code>, <code>plotly.min.js</code></td><td>Generated pages and the chart library they load.</td></tr>
+<tr><td><code>market_highs.py</code></td><td>Downloads the closes, works out highs, falls, similar cases and guesses, writes the data files.</td></tr>
+<tr><td><code>app.html</code></td><td>The page for every market: layout, charts and tooltips. Opens <code>data/&lt;market&gt;.js</code> for <code>?m=&lt;market&gt;</code>.</td></tr>
+<tr><td><code>data/&lt;market&gt;.js</code></td><td>One market's numbers for the page, rewritten when that market is built (not in git).</td></tr>
+<tr><td><code>highs_*.html</code></td><td>Short redirects to <code>app.html?m=&lt;market&gt;</code>, so old links and bookmarks keep working (not in git).</td></tr>
+<tr><td><code>plotly.min.js</code></td><td>The chart library the page loads, written on every run (not in git).</td></tr>
 <tr><td><code>predictions/</code></td><td>One file per market with every saved daily guess.</td></tr>
 <tr><td><code>market_highs.csv</code></td><td>Today's close and distance from the all-time high, per market.</td></tr>
 <tr><td><code>data/closes.csv</code></td><td>Every market's daily closes, kept between runs (not in git). A run downloads only the last few days; a market's full history again only when it is new or a split changed its old closes. Delete the file to download everything again.</td></tr>

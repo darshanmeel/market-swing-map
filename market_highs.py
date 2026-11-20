@@ -1,12 +1,14 @@
 """Swing map per market: turning points, distance from highs, past falls this deep, and a saved guess each day.
 
 Usage: python market_highs.py [TICKER ...]   (Yahoo symbols, default: every index, commodity and company listed)
-Writes one offline page per market (highs_<ticker>.html, from swing_template.html), today's numbers to
-market_highs.csv, and the day's guess to predictions/<ticker>.json (older guesses kept and scored).
+Writes each market's data to data/<slug>.js, shown offline by the one page app.html?m=<slug>, plus highs_<slug>.html,
+a redirect to it for old links; today's numbers to market_highs.csv, and the day's guess to predictions/<slug>.json
+(older guesses kept and scored).
 Closes are kept in data/closes.csv, so a run only downloads the latest days.
 """
 import json
 import math
+import re
 import sys
 from html import escape
 from pathlib import Path
@@ -382,19 +384,23 @@ def page_data(t, d, eps, pages, name):
 def main():
     tickers = sys.argv[1:] or list(NAMES)
     data = {t: highs(s) for t, s in load(tickers).items()}
-    slug = {t: t.strip('^').replace('=', '_').lower() for t in NAMES | data}
-    files = {t: f"highs_{slug[t]}.html" for t in slug}
-    template = (OUT / "swing_template.html").read_text(encoding="utf-8")
+    # Only [a-z0-9_.-]: app.html accepts nothing else in ?m=
+    slug = {t: re.sub(r"[^a-z0-9_.-]", "_", t.strip("^").lower()) for t in NAMES | data}
     (OUT / "plotly.min.js").write_text(get_plotlyjs(), encoding="utf-8")
+    (OUT / "data").mkdir(exist_ok=True)
 
     summary = []
     for t, d in data.items():
         start = d.index[-1] - pd.DateOffset(years=SHOW_YEARS)
-        # Every page in the menu, also those not rebuilt in this run
-        pages = [{"name": n, "href": files[o], "here": o == t, "group": g} for g, m in GROUPS.items() for o, n in m.items()]
+        # Every market in the menu, also those not rebuilt in this run
+        pages = [{"name": n, "href": f"app.html?m={slug[o]}", "here": o == t, "group": g} for g, m in GROUPS.items() for o, n in m.items()]
         payload = json.dumps(page_data(t, d, episodes(d, start), pages, slug[t])).replace("</", "<\\/")
-        html = template.replace("__TITLE__", escape(f"Swing map: {NAMES.get(t, t)}")).replace("__DATA__", payload)
-        (OUT / files[t]).write_text(html, encoding="utf-8")
+        (OUT / "data" / f"{slug[t]}.js").write_text(f"window.D = {payload};\n", encoding="utf-8")
+        # Old links, bookmarks and the scheduled task's file names keep working
+        url, title = f"app.html?m={slug[t]}", escape(f"Swing map: {NAMES.get(t, t)}")
+        (OUT / f"highs_{slug[t]}.html").write_text(
+            f'<!doctype html>\n<meta charset="utf-8">\n<title>{title}</title>\n'
+            f'<meta http-equiv="refresh" content="0; url={url}">\n<a href="{url}">{title}</a>\n', encoding="utf-8")
         summary.append({"index": NAMES.get(t, t), "date": d.index[-1].date(), "close": round(d.close.iloc[-1], 2),
                         "vs ATH %": round(d.pct_ATH.iloc[-1] * 100, 2), "ATH set on": d.prev_ath_date.iloc[-1].date()})
     table = pd.DataFrame(summary)
