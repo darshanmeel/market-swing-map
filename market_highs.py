@@ -10,6 +10,7 @@ import sys
 from html import escape
 from pathlib import Path
 
+import numpy as np
 import pandas as pd
 import yfinance as yf
 from plotly.offline import get_plotlyjs
@@ -28,7 +29,7 @@ COMPANIES = {
     "CCEP": "Coca-Cola Europacific", "CDNS": "Cadence Design", "CEG": "Constellation Energy", "CHTR": "Charter Communications",
     "CMCSA": "Comcast", "COST": "Costco", "CPRT": "Copart", "CRM": "Salesforce", "CRWD": "CrowdStrike", "CSCO": "Cisco",
     "CSGP": "CoStar", "CSX": "CSX", "CTAS": "Cintas", "CTSH": "Cognizant", "CVX": "Chevron", "DASH": "DoorDash",
-    "DDOG": "Datadog", "DIS": "Disney", "DXCM": "Dexcom", "EA": "Electronic Arts", "EXC": "Exelon", "FANG": "Diamondback Energy",
+    "DDOG": "Datadog", "DIS": "Disney", "DXCM": "Dexcom", "EXC": "Exelon", "FANG": "Diamondback Energy",
     "FAST": "Fastenal", "FTNT": "Fortinet", "GEHC": "GE HealthCare", "GFS": "GlobalFoundries", "GILD": "Gilead",
     "GOOGL": "Alphabet", "GS": "Goldman Sachs", "HD": "Home Depot", "HON": "Honeywell", "IBM": "IBM", "IDXX": "IDEXX",
     "INTC": "Intel", "INTU": "Intuit", "ISRG": "Intuitive Surgical", "JNJ": "Johnson & Johnson", "JPM": "JPMorgan Chase",
@@ -42,7 +43,7 @@ COMPANIES = {
     "SHOP": "Shopify", "SHW": "Sherwin-Williams", "SNPS": "Synopsys", "TEAM": "Atlassian", "TMUS": "T-Mobile US",
     "TRI": "Thomson Reuters", "TRV": "Travelers", "TSLA": "Tesla", "TTD": "The Trade Desk", "TTWO": "Take-Two",
     "TXN": "Texas Instruments", "UNH": "UnitedHealth", "V": "Visa", "VRSK": "Verisk", "VRTX": "Vertex", "VZ": "Verizon",
-    "WBD": "Warner Bros. Discovery", "WDAY": "Workday", "WMT": "Walmart", "XEL": "Xcel Energy", "ZS": "Zscaler",
+    "WDAY": "Workday", "WMT": "Walmart", "XEL": "Xcel Energy", "ZS": "Zscaler",
 }
 OTHER = {"GC=F": "Gold (futures)", "SI=F": "Silver (futures)", "CL=F": "WTI crude oil (futures)", "BTC-USD": "Bitcoin"}
 GROUPS = {"Indices": NAMES, "Commodities and crypto": OTHER, "Companies": dict(sorted(COMPANIES.items(), key=lambda kv: kv[1]))}
@@ -70,6 +71,8 @@ def load(tickers):
         if t not in data or data[t].empty:
             print(f"No data for {t}: check the Yahoo symbol.", file=sys.stderr)
             data.pop(t, None)
+        elif data[t].index[-1] < close.index[-1] - pd.Timedelta("10D"):  # delisted or taken over
+            print(f"No close for {t} since {data.pop(t).index[-1].date()}: remove it from the list.", file=sys.stderr)
     if not data:
         sys.exit("No data downloaded; nothing written.")
     return data
@@ -110,7 +113,8 @@ def episodes(d, start):
             "Status": "reversed" if len(after) else "still falling",
             "_end": after[0] if len(after) else d.index[-1],
         })
-    df = pd.DataFrame(rows)
+    df = pd.DataFrame(rows, columns=["Peak on", "Peak close", "Fall", "Low on", "Depth %", "Close at low", "Recovery",
+                                     "Back at high", "Days to recover", "Status", "_end"])
     df["Days to recover"] = df["Days to recover"].astype("Int64")
     # Rise after the low: to the highest close before the next big fall began (or until today).
     big = df[df["Depth %"] <= -BIG_FALL]
@@ -211,7 +215,35 @@ def track(name, d):
     hist = [h for h in hist if h]
     PRED.mkdir(exist_ok=True)
     f.write_text(json.dumps(hist), encoding="utf-8")
-    return [score(h, d) for h in hist[-SHOW_GUESSES:]]
+    turned = episodes(d, d.index[0])
+    turned = turned[turned.Status == "reversed"]
+    return [{**score(h, d), "alt": other_ways(d[d.index <= h["date"]], turned)} for h in hist[-SHOW_GUESSES:]]
+
+
+def other_ways(d, turned):
+    """Four other guesses from the same close, as returns: middle path and 10-90% band (trend: one line)."""
+    c, k = d.close.to_numpy(), np.arange(HORIZON + 1)
+    band = lambda m: {"n": len(m), **{key: [round(float(x), 3) for x in np.nanquantile(m, q, axis=0)]
+                                      for key, q in (("mid", .5), ("lo", .1), ("hi", .9))}}
+    out = {}
+    # Shallower falls that turned: falls that stopped between half of today's depth and today's depth, replayed from their low
+    now = d.pct_ATH.iloc[-1] * 100
+    lows = turned[(turned["Depth %"] > now) & (turned["Depth %"] <= now / 2) & (pd.to_datetime(turned["Back at high"]) <= d.index[-1])]["Low on"]
+    m = np.full((len(lows), HORIZON + 1), np.nan)
+    for r, low in enumerate(lows):
+        i = d.index.get_loc(pd.Timestamp(low)); seg = c[i:i + HORIZON + 1]
+        m[r, :len(seg)] = seg / seg[0] - 1
+    if len(lows) >= 3:
+        out["shallow"] = band(m)
+    # Random walk: this market's own daily moves drawn at random, 1000 paths; seeded so a rebuild gives the same guess
+    r = np.diff(np.log(c))
+    out["random"] = band(np.exp(np.cumsum(np.c_[np.zeros(1000), np.random.default_rng(len(c)).choice(r, (1000, HORIZON))], axis=1)) - 1)
+    # Any year: every 1-year stretch in the history (start every 5th day), from any starting point
+    st = np.arange(0, len(c) - HORIZON, 5)
+    out["year"] = band(c[st[:, None] + k] / c[st][:, None] - 1)
+    # Trend continues: the last 60 trading days' daily pace kept up
+    out["trend"] = {"mid": [round(float(x), 3) for x in np.exp(k * (np.log(c[-1] / c[-61]) / 60)) - 1]}
+    return out
 
 
 def highs_lows(d):

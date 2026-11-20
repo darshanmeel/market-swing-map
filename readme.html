@@ -75,7 +75,7 @@ All-time highs use the full history Yahoo has for each market, so a high is a re
 <tr><td>Every past fall this deep</td><td>All earlier falls from a record that got at least as deep as today: how many fell 5, 10 or 20% further (with the price that would mean today), the total fall from the high, the days to get there and on to the low, the time back to the old high, and the rise before the next 10% fall.</td></tr>
 <tr><td>What each past fall did next</td><td>Each past case's next year, applied to today's close, one coloured line each. Buttons replay it from 10, 20 or 30% lower.</td></tr>
 <tr><td>Would this have worked before?</td><td>A back-test: at each past fall, what earlier falls alone suggested, against what really happened.</td></tr>
-<tr><td>Daily guesses</td><td>The saved guesses, one chart per guess day, with the real closes since drawn on top and the past fall it follows in bold.</td></tr>
+<tr><td>Daily guesses</td><td>One chart per guess day, five methods (past deeper falls, shallower falls that turned, random walk, any year, trend), the real closes since drawn on top, and a table of which method is closest so far.</td></tr>
 <tr><td>Falls of 10% or more, highs and lows, last 30 days</td><td>The tables behind the charts.</td></tr>
 </table>
 
@@ -83,11 +83,16 @@ All-time highs use the full history Yahoo has for each market, so a high is a re
 <p>Each run saves one guess per market for that day's close in <code>predictions/&lt;market&gt;.json</code>. A rerun on the
 same day replaces that day's guess; older days are never changed.</p>
 <h3>How a guess is made</h3>
-<ol>
-<li>Take every past fall from an all-time high that got at least as deep as today and later recovered.</li>
-<li>Keep the 8 that got to today's depth at the most similar speed (days from the high).</li>
-<li>From the day each one first reached today's depth, replay its next year as % moves from today's close.</li>
-</ol>
+<p>Each guess is made five ways from the same close, using only the data up to that day. Pick one with the <b>Method</b> buttons, or <b>All methods</b> to compare the middle paths.</p>
+<table>
+<tr><th>Method</th><th>What it replays</th></tr>
+<tr><td>Past deeper falls</td><td>The 8 past falls from a record that got at least as deep, at the most similar speed, each from the day it first got there. This guess is saved in <code>predictions/</code>.</td></tr>
+<tr><td>Shallower falls that turned</td><td>Past falls that stopped between half the current depth and the current depth, replayed from their low, as if the guess day were the bottom (needs 3 or more).</td></tr>
+<tr><td>Random walk</td><td>The daily moves of this market drawn at random, 1000 paths (seeded, so a rebuild gives the same result).</td></tr>
+<tr><td>Any year</td><td>Every 1-year stretch in the history, from any starting day: what a normal year looks like.</td></tr>
+<tr><td>Trend continues</td><td>The pace of the last 60 trading days kept up for a year.</td></tr>
+</table>
+<p>Bands hold the middle 80% of paths. The four extra methods are worked out again on every run for the guesses shown, so the files in <code>predictions/</code> stay small.</p>
 <h3>How it is scored</h3>
 <p>The chart shows one guess day at a time (pick it from the list), zoomed to 1 week, 1 month, 6 months or 1 year,
 with the real closes printed on the black line. After every close, each saved guess gets the real close added. A guess is <b>inside</b> while the real close sits
@@ -96,6 +101,7 @@ this fall is unlike the past ones.</p>
 <ul>
 <li><b>Bold line:</b> the past fall the real path has followed most closely so far; the others are faded.</li>
 <li><b>Dot colour</b> on the real path: the past fall closest to that day's close.</li>
+<li><b>Method table</b> under the chart: each method's average miss against the real closes so far; the smallest is bold.</li>
 <li><b>Summary bullets</b> under the chart: the move since the guess, the fall it follows, inside or outside the scenarios, and the closest fall each day.</li>
 </ul>
 <p>
