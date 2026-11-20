@@ -128,11 +128,7 @@ dl{display:grid;grid-template-columns:max-content 1fr;gap:5px 14px;margin:0;font
         <span><i style="background:#C9A58C"></i>Got there slower</span></div></div>
     <dl id="simLead"></dl>
     <div id="paths"></div>
-    <p class="kicker" style="margin:6px 0 12px">One row per past fall, by the month of its high. First: the fall from the high, grey up to today's depth
-      and orange for how much further it went; the label gives the total and the extra fall measured from today's depth.
-      Second: the days, grey to reach today's depth and orange from there to the low. Third: from the low back to the old
-      high. Fourth: how far it climbed from the low before the next fall of 10% or more. Very long bars are cut short; the
-      label gives the real value.</p>
+    <p class="kicker" style="margin:6px 0 12px">One row per past fall. Grey: up to today's depth. Colour: what came after. Long bars are cut; labels give the real value.</p>
     <div class="grid" style="margin-top:0">
       <div class="scroll"><table id="simTable"></table></div>
       <dl id="simFacts"></dl>
@@ -356,29 +352,31 @@ function similarFalls() {
   const upCap = 200, dayCap = 400;  // very long rises and falls: cut the bar, keep the real label
   const at = -S.now * 100, tot = R.map(r => -r.depth * 100);
   const grey = '#D5D9DF', bar = (x, color, xaxis, extra) => ({type: 'bar', orientation: 'h', y: ys, x, marker: {color}, xaxis, yaxis: 'y', cliponaxis: false, ...extra});
-  const head = (x, text) => ({xref: 'paper', yref: 'paper', x, y: 1, yanchor: 'bottom', yshift: 8, xanchor: 'left', showarrow: false, text: `<b>${text}</b>`});
+  const head = (x, text, y) => ({xref: 'paper', yref: 'paper', x, y, yanchor: 'bottom', yshift: 8, xanchor: 'left', showarrow: false, text: `<b>${text}</b>`});
   Plotly.react('paths', [
     bar(R.map(() => at), grey, 'x', {hovertemplate: R.map(r => `High ${r.peak}: first at ${pc(S.now)} on day ${r.hitDays}<extra></extra>`)}),
-    bar(tot.map(x => x - at), col, 'x', {text: R.map(r => `${pc(r.depth)} total (then ${pc(r.more)} from the ${pc(S.now)} level)`), textposition: 'outside',
-      hovertemplate: R.map(r => `High ${r.peak}: ${pc(S.now)}, then ${pc(r.more)} more from there; ${pc(r.depth)} in total by ${r.low}<extra></extra>`)}),
+    bar(tot.map(x => x - at), col, 'x', {text: R.map(r => `${pc(r.depth)} → ${money(D.athValue * (1 + r.depth))}`), textposition: 'outside',
+      hovertemplate: R.map(r => `High ${r.peak}: ${pc(r.depth)} in total by ${r.low}, ${pc(r.more)} more from the ${pc(S.now)} level.<br>The same fall today would end at ${money(D.athValue * (1 + r.depth))}<extra></extra>`)}),
     bar(R.map(r => Math.min(r.hitDays, dayCap)), grey, 'x2', {hovertemplate: R.map(r => `${span(r.hitDays)} from the high to ${pc(S.now)}<extra></extra>`)}),
     bar(R.map(r => Math.max(0, Math.min(r.hitDays + r.moreDays, dayCap) - Math.min(r.hitDays, dayCap))), col, 'x2',
       {text: R.map(r => `${span(r.hitDays)} + ${span(r.moreDays)}`), textposition: 'outside',
        hovertemplate: R.map(r => `${span(r.hitDays)} to reach ${pc(S.now)}, then ${span(r.moreDays)} more to the low<extra></extra>`)}),
-    bar(mo, css('--rise'), 'x3', {text: R.map(r => span(r.recDays)), textposition: 'outside',
+    bar(mo, css('--rise'), 'x3', {yaxis: 'y2', text: R.map(r => span(r.recDays)), textposition: 'outside',
       hovertemplate: R.map(r => `Low ${r.low}: back at the old high after ${span(r.recDays)}<extra></extra>`)}),
-    bar(R.map(r => Math.min((r.up || 0) * 100, upCap)), css('--up'), 'x4', {textposition: 'outside',
+    bar(R.map(r => Math.min((r.up || 0) * 100, upCap)), css('--up'), 'x4', {yaxis: 'y2', textposition: 'outside',
       text: R.map(r => r.up == null ? '' : `+${(r.up * 100).toFixed(0)}%, ${span(r.upDays)}${/so far/.test(r.rise) ? ' so far' : ''}`),
       hovertemplate: R.map(r => `From the ${r.low} low: ${r.rise || '-'} before the next 10% fall began<extra></extra>`)}),
-  ], {margin: {l: 80, r: 70, t: 34, b: 30}, height: 70 + R.length * 30, showlegend: false, bargap: .35, barmode: 'stack',
+  ], {margin: {l: 80, r: 90, t: 34, b: 30}, height: 150 + R.length * 50, showlegend: false, bargap: .3, barmode: 'stack',
       paper_bgcolor: 'rgba(0,0,0,0)', plot_bgcolor: 'rgba(0,0,0,0)', font: {size: 11},
-      yaxis: {type: 'category', tickvals: ys, ticktext: lbl, autorange: 'reversed'},
-      xaxis: {domain: [0, .28], ticksuffix: '%', tickprefix: '−', gridcolor: css('--line'), zeroline: false, range: [0, Math.max(...tot) * 1.7]},
-      xaxis2: {domain: [.36, .56], ticksuffix: ' d', gridcolor: css('--line'), range: [0, dayCap * 1.6], dtick: 200},
-      xaxis3: {domain: [.64, .78], ticksuffix: ' mo', gridcolor: css('--line'), range: [0, 52], dtick: 24},
-      xaxis4: {domain: [.86, 1], ticksuffix: '%', tickprefix: '+', gridcolor: css('--line'), range: [0, upCap * 1.7], dtick: 200},
-      annotations: [head(0, 'Fall from the all-time high: to today\'s depth + more'), head(.36, 'Days: to today\'s depth + to the low'),
-                    head(.64, 'Low back to old high'), head(.86, 'Rise before next 10% fall')]},
+      // Two rows of two panels, so the labels have room
+      yaxis: {type: 'category', tickvals: ys, ticktext: lbl, autorange: 'reversed', domain: [.55, 1]},
+      yaxis2: {type: 'category', tickvals: ys, ticktext: lbl, autorange: 'reversed', domain: [0, .43]},
+      xaxis: {domain: [0, .44], anchor: 'y', ticksuffix: '%', tickprefix: '−', gridcolor: css('--line'), zeroline: false, range: [0, Math.max(...tot) * 1.45]},
+      xaxis2: {domain: [.56, 1], anchor: 'y', ticksuffix: ' d', gridcolor: css('--line'), range: [0, dayCap * 1.45], dtick: 100},
+      xaxis3: {domain: [0, .44], anchor: 'y2', ticksuffix: ' mo', gridcolor: css('--line'), range: [0, 48], dtick: 12},
+      xaxis4: {domain: [.56, 1], anchor: 'y2', ticksuffix: '%', tickprefix: '+', gridcolor: css('--line'), range: [0, upCap * 1.45], dtick: 50},
+      annotations: [head(0, 'Total fall from the record → where the index would end today', 1), head(.56, 'Days: to the current depth + on to the low', 1),
+                    head(0, 'Low back to the old high', .43), head(.56, 'Rise before the next 10% fall', .43)]},
     {responsive: true, displayModeBar: false});
 
   // The plain answer: how many past falls went 5, 10, 20% further, and what that would mean in points today
