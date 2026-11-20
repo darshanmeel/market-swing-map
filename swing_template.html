@@ -116,9 +116,12 @@ dl{display:grid;grid-template-columns:max-content 1fr;gap:5px 14px;margin:0;font
   </section>
 
   <section class="card" style="margin-top:14px" id="rankCard">
-    <h2 data-k="rank">How bad is this fall? Every fall of 10% or more from a record</h2>
+    <h2 data-k="rank">How bad is this fall? Every fall of 10% or more</h2>
     <p class="kicker" id="rankLead" style="margin:4px 0 10px"></p>
-    <div class="seg" id="rankSpan"><span>Show</span><button type="button" data-v="10">Last 10 years</button><button type="button" data-v="0">All time</button></div>
+    <div style="display:flex;gap:18px;flex-wrap:wrap">
+      <div class="seg" id="rankFrom"><span>Fall from</span><button type="button" data-v="ath">The record</button><button type="button" data-v="swing">The last swing high</button></div>
+      <div class="seg" id="rankSpan"><span>Show</span><button type="button" data-v="10">Last 10 years</button><button type="button" data-v="0">All time</button></div>
+    </div>
     <div id="rank" style="margin-top:8px"></div>
   </section>
 
@@ -220,7 +223,7 @@ const TIPS = {
   facts: 'Today\'s fall in context: how long since the record, when it was last this far down, how earlier falls this deep ended, and the last big fall that finished.',
   hl: 'Today\'s price against the record high and the highest and lowest closes of the last year and 6 months. Negative: below that level. Positive: above it.',
   test: 'A check of this page against history. For each past fall, go back to the day it first got as deep as today, and work out the outcome range using only the falls that came before it. Then compare with what really happened. Call: did most earlier falls point the right way (higher or lower a year on), and did the real result land inside their range. Green: right way and inside the range. Red: wrong way. Many red rows mean history is a weak guide here.',
-  rank: 'Every fall of 10% or more from an all-time high, deepest first. Grey: past falls at their full depth, high to low. Orange: the current fall so far, with a dotted line at its depth. Grey bars that pass the line went deeper than today. Switch between the last 10 years and all the history there is. Depth is from the record close, not from the last swing high.',
+  rank: 'Every fall of 10% or more from an all-time high, deepest first. Grey: past falls at their full depth, high to low. Orange: the current fall so far, with a dotted line at its depth. Grey bars that pass the line went deeper than today. Switch between the last 10 years and all the history there is. The record: depth below the all-time high, so a new drop before the old record is regained stays part of the earlier fall (2008 for the Nasdaq is inside its 2000 fall). The last swing high: every drop of 10% or more from a high, each ended by a 10% rise, so such a drop counts on its own.',
   track: 'One saved guess per weekday. Each guess takes the past falls (up to 8) that got as deep as that day at the most similar speed, and replays what each did next from that day\'s close for a year: one coloured line per past fall. The thick black line is what really happened after the guess day, added after every close. Pick an older date to see how that guess is doing, and 1 week to 1 year to zoom in or out. Inside: reality is still within the scenarios. Below or above: it is doing worse or better than all of them, the sign that this fall is different. Closest scenario: the past fall it has followed most closely so far.',
   daily: 'Each of the last 30 trading days: the close, the change that day, and how far it was from the record high and the 1-year and 6-month highs and lows.',
 };
@@ -559,15 +562,17 @@ trackRecord();
 
 // Today's fall ranked against every fall of 10% or more from a record
 function rankFalls() {
-  const A = D.rank || [];
-  if (!A.some(f => f.now)) { $('rankCard').hidden = true; return; }  // at or near the record: nothing to rank
+  let from = 'ath';
+  if (!(D.rank || []).some(f => f.now) && !(D.rankSwing || []).some(f => f.now)) { $('rankCard').hidden = true; return; }  // at or near the record: nothing to rank
   const mon = d => new Date(d).toLocaleDateString('en-GB', {month: 'short', year: 'numeric'});
   let yrs = 10;
   function show() {
-    const from = new Date(dates[N - 1]); from.setFullYear(from.getFullYear() - yrs);
-    const R = A.filter(f => !yrs || f.now || new Date(f.peak) >= from).sort((a, b) => a.depth - b.depth);
-    const cur = R.find(f => f.now), worse = R.filter(f => !f.now && f.depth < cur.depth).length, past = R.length - 1;
-    $('rankLead').innerHTML = `<b>Today ${pc(cur.depth / 100)}: ${worse} of ${past} past falls ${yrs ? 'in the last 10 years' : 'on record'} went deeper</b>` +
+    const A = (from === 'ath' ? D.rank : D.rankSwing) || [], t0 = new Date(dates[N - 1]); t0.setFullYear(t0.getFullYear() - yrs);
+    const R = A.filter(f => !yrs || f.now || new Date(f.peak) >= t0).sort((a, b) => a.depth - b.depth);
+    const cur = R.find(f => f.now) || {depth: 0, now: true, peak: dates[N - 1], low: dates[N - 1]};
+    if (!R.includes(cur)) R.push(cur);
+    const worse = R.filter(f => !f.now && f.depth < cur.depth).length, past = R.length - 1;
+    $('rankLead').innerHTML = `<b>Today ${pc(cur.depth / 100)}: ${worse} of ${past} past falls ${yrs ? 'in the last 10 years' : 'on record'} went deeper</b> (measured from ${from === 'ath' ? 'the all-time high' : 'the last swing high'})` +
       `; ${past - worse} stopped before this point. Past falls show their full depth; today's is ${cur.depth > -10 ? 'still under 10%' : 'so far'}.`;
     const lbl = R.map(f => f.now ? '<b>Now</b>' : `${mon(f.peak)}`);
     $('rank').style.height = `${50 + R.length * 22}px`;
@@ -581,8 +586,10 @@ function rankFalls() {
        shapes: [{type: 'line', yref: 'paper', y0: 0, y1: 1, x0: -cur.depth, x1: -cur.depth, line: {color: css('--fall'), width: 1, dash: 'dot'}}]},
       {responsive: true, displayModeBar: false});
     [...$('rankSpan').querySelectorAll('button')].forEach(b => b.setAttribute('aria-pressed', +b.dataset.v === yrs));
+    [...$('rankFrom').querySelectorAll('button')].forEach(b => b.setAttribute('aria-pressed', b.dataset.v === from));
   }
   $('rankSpan').onclick = e => { if (e.target.dataset.v) { yrs = +e.target.dataset.v; show(); } };
+  $('rankFrom').onclick = e => { if (e.target.dataset.v) { from = e.target.dataset.v; show(); } };
   show();
 }
 rankFalls();

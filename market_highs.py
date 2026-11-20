@@ -229,6 +229,25 @@ def daily_table(d):
     return out.iloc[1:].iloc[::-1].to_html(index=False, border=0, na_rep="-")
 
 
+def swing_falls(c, th=BIG_FALL / 100):
+    """Falls of th or more from a swing high (a high that held until a th drop), each ended by a th rise; the last may be ongoing."""
+    out, down, hi, hid, lo, lod = [], False, c.iloc[0], c.index[0], None, None
+    for t, v in c.items():
+        if not down and v > hi:
+            hi, hid = v, t
+        elif not down and v <= hi * (1 - th):
+            down, lo, lod = True, v, t
+        elif down and v < lo:
+            lo, lod = v, t
+        elif down and v >= lo * (1 + th):
+            out.append({"peak": str(hid.date()), "low": str(lod.date()), "depth": round((lo / hi - 1) * 100, 2), "now": False})
+            down, hi, hid = False, v, t
+    last = c.iloc[-1]
+    if last < hi:
+        out.append({"peak": str(hid.date()), "low": str((lod if down else c.index[-1]).date()), "depth": round((last / hi - 1) * 100, 2), "now": True})
+    return out
+
+
 def page_data(t, d, eps, pages, name):
     start = d.index[-1] - pd.DateOffset(years=SHOW_YEARS + WARMUP_YEARS)
     w = d[d.index >= start]
@@ -244,6 +263,7 @@ def page_data(t, d, eps, pages, name):
         "fallsTable": eps[eps["Depth %"] <= -BIG_FALL][cols].iloc[::-1].to_html(index=False, border=0, na_rep="-"),
         "rank": [{"peak": str(e["Peak on"]), "low": str(e["Low on"]), "depth": float(e["Depth %"]), "now": e.Status != "reversed"}
                  for _, e in episodes(d, d.index[0]).iterrows() if e["Depth %"] <= -BIG_FALL or e.Status != "reversed"],
+        "rankSwing": swing_falls(d.close),
         "dailyTable": daily_table(d), "highsLows": highs_lows(d), "facts": facts(d, eps), "similar": similar(d), "track": track(name, d),
     }
 
