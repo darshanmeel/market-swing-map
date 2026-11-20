@@ -260,6 +260,8 @@ def backtest(d):
         after = d.pct_ATH[d.index > pd.Timestamp(e["Peak on"])]
         hit = after[after <= now].index[0]
         i = d.index.get_loc(hit)
+        if i < HORIZON:  # under a year of earlier closes: too little to guess from
+            continue
         past = d[d.index <= hit]
         ways, s = {}, snapshot(past)
         if s:  # past deeper falls: middle (as on the page), lowest and highest case

@@ -542,7 +542,7 @@ function trackRecord() {
       const n = Math.min(k, p.mid.length - 1), miss = n ? g.real.slice(0, n).reduce((a, r, j) => a + Math.abs(r / p.mid[j + 1] - 1), 0) / n : null;
       return {w, n, miss, real: n ? g.real[n - 1] : null, mid: p.mid[n], lo: p.lo && p.lo[n], hi: p.hi && p.hi[n]}; });
     const best = rows.filter(r => r.miss !== null).sort((a, b) => a.miss - b.miss)[0];
-    $('wayTable').innerHTML = '<tr><th>Method</th><th class="r">Middle path by now</th><th class="r">Band by now</th><th class="r">Real now</th><th class="r">Average miss so far</th><th>Real vs band</th></tr>' +
+    $('wayTable').innerHTML = `<tr><th>Method</th><th class="r">Middle path, ${g.real.length} days on</th><th class="r">Band, ${g.real.length} days on</th><th class="r">Real, ${dates[dates.indexOf(g.date) + g.real.length].slice(5)}</th><th class="r">Average miss so far</th><th>Real vs band</th></tr>` +
       rows.map(r => `<tr style="${r === best ? 'font-weight:700' : ''}"><td><span style="color:${WAYS[r.w][1]}">&#9632;</span> ${WAYS[r.w][0]}${r === best ? ' (closest)' : ''}</td>
         <td class="r">${money(r.mid)} (${pc(r.mid / g.close - 1)})</td><td class="r">${r.lo ? `${money(r.lo)} to ${money(r.hi)}` : '-'}</td>
         <td class="r">${r.real ? money(r.real) : '-'}</td><td class="r">${r.miss === null ? 'from the next close' : (r.miss * 100).toFixed(1) + '%'}</td>
@@ -584,7 +584,7 @@ function trackRecord() {
       ...(way === 'deeper' ? [] : wayTraces),
       ...(deep ? g.cases : []).map((c, j) => ({x: x.slice(0, c.path.length), y: c.path, mode: 'lines', line: {color: PAL[j % PAL.length], width: j === ni ? 5.5 : 1.5},
         opacity: ni < 0 || j === ni ? 1 : .45, legendrank: j === ni ? 1 : 10 + j,
-        name: `${j === ni ? '<b>Closest so far: ' : ''}${mon(c.peak)} fall${j === ni ? '</b>' : ''} (got there in ${span(c.hitDays)})${g.real.length && c.path.length > g.real.length ? `: ${pc(c.path[g.real.length] / g.close - 1)} by now` : ''}`, hovertemplate: `If like the ${mon(c.peak)} fall: %{y:,.0f}<extra></extra>`})),
+        name: `${j === ni ? '<b>Closest so far: ' : ''}${mon(c.peak)} fall${j === ni ? '</b>' : ''} (got there in ${span(c.hitDays)})${g.real.length && c.path.length > g.real.length ? `: ${pc(c.path[g.real.length] / g.close - 1)} ${g.date.slice(5)} to ${dates[i0 + g.real.length].slice(5)} (${g.real.length} days)` : ''}`, hovertemplate: `If like the ${mon(c.peak)} fall: %{y:,.0f}<extra></extra>`})),
       {x: [g.date, ...x.slice(1, g.real.length + 1)], y: [g.close, ...g.real], mode: 'lines+markers+text', line: {color: css('--ink'), width: 3},
         marker: {size: 11, color: [css('--ink'), ...best.map(b => deep ? PAL[b.i % PAL.length] : css('--ink'))], line: {color: css('--ink'), width: 2}},
         customdata: ['', ...best.map(b => deep ? `<br>closest that day: ${mon(b.c.peak)} fall (real ${pc(b.off)} vs it)` : '')],
