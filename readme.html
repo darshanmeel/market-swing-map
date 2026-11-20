@@ -67,7 +67,7 @@ All-time highs use the full history Yahoo has for each market, so a high is a re
 <tr><td>Every past fall this deep</td><td>All earlier falls from a record that got at least as deep as today: how many fell 5, 10 or 20% further (with the price that would mean today), the total fall from the high, the days to get there and on to the low, the time back to the old high, and the rise before the next 10% fall.</td></tr>
 <tr><td>What each past fall did next</td><td>Each past case's next year, applied to today's close, one coloured line each. Buttons replay it from 10, 20 or 30% lower.</td></tr>
 <tr><td>Would this have worked before?</td><td>A back-test: at each past fall, what earlier falls alone suggested, against what really happened.</td></tr>
-<tr><td>Daily guesses</td><td>The saved guesses, one chart per guess day, with the real closes since drawn on top.</td></tr>
+<tr><td>Daily guesses</td><td>The saved guesses, one chart per guess day, with the real closes since drawn on top and the past fall it follows in bold.</td></tr>
 <tr><td>Falls of 10% or more, highs and lows, last 30 days</td><td>The tables behind the charts.</td></tr>
 </table>
 
@@ -84,7 +84,13 @@ same day replaces that day's guess; older days are never changed.</p>
 <p>The chart shows one guess day at a time (pick it from the list), zoomed to 1 week, 1 month, 6 months or 1 year,
 with the real closes printed on the black line. After every close, each saved guess gets the real close added. A guess is <b>inside</b> while the real close sits
 between its lowest and highest scenario for that day, <b>below</b> or <b>above</b> when it leaves them, the sign that
-this fall is unlike the past ones. The page also names the scenario the real path has followed most closely so far.
+this fall is unlike the past ones.</p>
+<ul>
+<li><b>Bold line:</b> the past fall the real path has followed most closely so far; the others are faded.</li>
+<li><b>Dot colour</b> on the real path: the past fall closest to that day's close.</li>
+<li><b>Summary bullets</b> under the chart: the move since the guess, the fall it follows, inside or outside the scenarios, and the closest fall each day.</li>
+</ul>
+<p>
 On a market's first run, the last 20 trading days' guesses are made from the data each day had, so scoring starts at once.</p>
 <h3>Running it every day</h3>
 <p>On Windows a scheduled task runs the script Monday to Friday at 23:00 (after the US close at 22:00 Central European time)
