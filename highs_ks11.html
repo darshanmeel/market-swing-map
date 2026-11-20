@@ -148,15 +148,14 @@ dl{display:grid;grid-template-columns:max-content 1fr;gap:5px 14px;margin:0;font
 
   <section class="card" style="margin-top:14px" id="trackCard">
     <h2 data-k="track">Daily guesses: what the most similar past falls did next</h2>
-    <p class="kicker" style="margin:4px 0 10px">Every weekday after the close a new guess is saved: the past falls that got as deep
-      as that day at the most similar speed, each replayed for a year from that day's close. Older guesses are kept, and each
-      close after the guess day is added to its chart as the thick black line, so you can see which scenario it is following.</p>
+    <p class="kicker" style="margin:4px 0 10px">A new guess each weekday: the 8 past falls most like this one, replayed from that close.
+      Black: what really happened. Bold: the past fall it follows best.</p>
     <div style="display:flex;gap:18px;flex-wrap:wrap;align-items:center">
       <label class="pick">Guess made on <select id="guessDay"></select></label>
       <div class="seg" id="guessSpan"><span>Show</span></div>
     </div>
     <div id="track" style="height:440px;margin-top:8px"></div>
-    <dl id="trackFacts" style="margin:12px 0"></dl>
+    <ul id="trackFacts"></ul>
     <div class="scroll"><table id="trackTable"></table></div>
   </section>
 
@@ -479,24 +478,29 @@ function trackRecord() {
   const G = D.track;
   if (!G || !G.length) { $('trackCard').hidden = true; return; }
   const mon = d => new Date(d).toLocaleDateString('en-GB', {month: 'short', year: 'numeric'});
-  const PAL = ['#1F5BD8', '#D1462F', '#2A9D5C', '#8E44AD', '#E08A00', '#0E8C9E', '#B5367A', '#6B7A1F'];
+  const PAL = ['#0072B2', '#D55E00', '#009E73', '#CC79A7', '#E69F00', '#56B4E9', '#7B3294', '#8C564B'];  // colour-blind safe, high contrast
+  // For each real close: the scenario nearest to it that day
+  const bestDay = g => g.real.map((r, j) => { const at = g.cases.map((c, i) => [c, i]).filter(([c]) => c.path.length > j + 1);
+    const [c, i] = at.reduce((a, b) => Math.abs(b[0].path[j + 1] / r - 1) < Math.abs(a[0].path[j + 1] / r - 1) ? b : a);
+    return {c, i, off: r / c.path[j + 1] - 1}; });
   const ahead = (from, n) => { const i0 = dates.indexOf(from), out = [];
     for (let k = 0; k < n; k++) { if (i0 + k < N) out.push(dates[i0 + k]);
       else { const d = new Date(dates[N - 1]); d.setDate(d.getDate() + Math.round((k - (N - 1 - i0)) * 365.25 / 252)); out.push(d.toISOString().slice(0, 10)); } }
     return out; };
   const SPANS = [[5, '1 week'], [21, '1 month'], [126, '6 months'], [252, '1 year']];
   let cur = null, hz = 126;
-  // Plain words: how far it moved since the guess, which past fall it is following, and how all scenarios stood at this point
-  function conclude(g) {
+  // Short bullets: the move, the past fall it follows, the result, the closest fall each day
+  function conclude(g, best, ni) {
     const k = g.real.length;
-    if (!k) return 'guess made today: the first real close is added after the next close';
-    const last = g.real[k - 1], d = dates[Math.min(dates.indexOf(g.date) + k, N - 1)], at = g.cases.filter(c => c.path.length > k);
-    const near = g.cases.find(c => c.peak === g.near), nearPc = near && near.path.length > k ? near.path[k] / g.close - 1 : null;
-    const lower = at.filter(c => c.path[k] < g.close).length;
-    return `<b>From the guess day to ${d} (${k} trading day${k === 1 ? '' : 's'}) it moved ${pc(last / g.close - 1)}, from ${money(g.close)} to ${money(last)}.</b> ` +
-      (g.res ? `It has followed the <b>${mon(g.near)} fall</b> most closely${nearPc === null ? '' : ` (that fall was ${pc(nearPc)} at the same point)`}. ` +
-       `Scenarios at this point: ${at.map(c => `${mon(c.peak)} ${pc(c.path[k] / g.close - 1)}`).join(', ')}; ${lower} of ${at.length} were lower than the guess-day close. ` +
-       `Real result: ${g.res} the scenarios${g.res === 'inside' ? '' : `, ${g.why}`}.` : 'More than a year has passed; this guess is closed.');
+    if (!k) return '<li>Made today: the first real close is added after the next close.</li>';
+    const last = g.real[k - 1], at = g.cases.filter(c => c.path.length > k), near = g.cases[ni];
+    const dm = j => new Date(ahead(g.date, j + 1)[j]).toLocaleDateString('en-GB', {day: 'numeric', month: 'short'});
+    const fall = (c, i) => `<b style="color:${PAL[i % PAL.length]}">${mon(c.peak)} fall</b>`;
+    return `<li><b>Moved ${pc(last / g.close - 1)}</b> in ${k} trading day${k === 1 ? '' : 's'}: ${money(g.close)} → ${money(last)}</li>` +
+      (g.res ? `<li><b>Following:</b> ${fall(near, ni)}${near.path.length > k ? `, which was ${pc(near.path[k] / g.close - 1)} at this point` : ''}</li>` +
+       `<li><b>Result:</b> ${g.res} the scenarios${g.res === 'inside' ? '' : ` (${g.why})`}; ${at.filter(c => c.path[k] < g.close).length} of ${at.length} were lower by now</li>` +
+       `<li><b>Closest each day:</b> ${best.slice(0, hz).slice(-10).map((b, j, a) => `${dm(Math.min(k, hz) - a.length + j + 1)} ${fall(b.c, b.i)}`).join(' · ')}</li>`
+       : '<li>Closed: more than a year has passed.</li>');
   }
   function show(g) {
     cur = g;
@@ -505,14 +509,18 @@ function trackRecord() {
     const pre = Math.max(3, Math.round(hz / 2)), xs = dates[Math.max(0, i0 - pre)], xe = x[Math.min(hz, x.length - 1)];
     const inView = [...C.slice(Math.max(0, i0 - pre), i0 + 1), g.close, ...g.real.slice(0, hz), ...g.cases.flatMap(c => c.path.slice(0, hz + 1))];
     const pad = (Math.max(...inView) - Math.min(...inView)) * .08;
+    const best = bestDay(g), ni = g.cases.findIndex(c => c.peak === g.near);
     const lab = [g.close, ...g.real].map((v, j, a) => a.length <= 12 || j === 0 || j === a.length - 1 ? money(v) : '');
     Plotly.react('track', [
       {x: dates.slice(b0, i0 + 1), y: C.slice(b0, i0 + 1), mode: 'lines', line: {color: '#8B939E', width: 1.5}, name: 'before the guess', showlegend: false, hovertemplate: 'close: %{y:,.2f}<extra></extra>'},
-      ...g.cases.map((c, j) => ({x: x.slice(0, c.path.length), y: c.path, mode: 'lines', line: {color: PAL[j % PAL.length], width: 1.5},
-        name: `${mon(c.peak)} fall (got there in ${span(c.hitDays)})${g.real.length && c.path.length > g.real.length ? `: ${pc(c.path[g.real.length] / g.close - 1)} by now` : ''}`, hovertemplate: `If like the ${mon(c.peak)} fall: %{y:,.0f}<extra></extra>`})),
-      {x: [g.date, ...x.slice(1, g.real.length + 1)], y: [g.close, ...g.real], mode: 'lines+markers+text', marker: {size: 6}, line: {color: css('--ink'), width: 3},
+      ...g.cases.map((c, j) => ({x: x.slice(0, c.path.length), y: c.path, mode: 'lines', line: {color: PAL[j % PAL.length], width: j === ni ? 5.5 : 1.5},
+        opacity: ni < 0 || j === ni ? 1 : .45, legendrank: j === ni ? 1 : 10 + j,
+        name: `${j === ni ? '<b>Closest so far: ' : ''}${mon(c.peak)} fall${j === ni ? '</b>' : ''} (got there in ${span(c.hitDays)})${g.real.length && c.path.length > g.real.length ? `: ${pc(c.path[g.real.length] / g.close - 1)} by now` : ''}`, hovertemplate: `If like the ${mon(c.peak)} fall: %{y:,.0f}<extra></extra>`})),
+      {x: [g.date, ...x.slice(1, g.real.length + 1)], y: [g.close, ...g.real], mode: 'lines+markers+text', line: {color: css('--ink'), width: 3},
+        marker: {size: 11, color: [css('--ink'), ...best.map(b => PAL[b.i % PAL.length])], line: {color: css('--ink'), width: 2}},
+        customdata: ['', ...best.map(b => `<br>closest that day: ${mon(b.c.peak)} fall (real ${pc(b.off)} vs it)`)],
         text: lab, textposition: lab.map((_, j) => j % 2 ? 'bottom center' : 'top center'), textfont: {size: 11, color: css('--ink')}, cliponaxis: false,
-        name: 'What really happened', hovertemplate: '%{x|%d %b %Y} real close: %{y:,.2f}<extra></extra>'},
+        name: 'What really happened (dot colour = closest past fall that day)', legendrank: 0, hovertemplate: '%{x|%d %b %Y} real close: %{y:,.2f}%{customdata}<extra></extra>'},
     ], {margin: {l: 60, r: 14, t: 8, b: 30}, showlegend: true, legend: {font: {size: 11}, itemdoubleclick: 'toggleothers'},
         paper_bgcolor: 'rgba(0,0,0,0)', plot_bgcolor: 'rgba(0,0,0,0)', hovermode: 'closest',
         yaxis: {gridcolor: css('--line'), tickformat: ',.0f', range: [Math.min(...inView) - pad, Math.max(...inView) + pad]},
@@ -520,9 +528,9 @@ function trackRecord() {
         shapes: [{type: 'line', yref: 'paper', y0: 0, y1: 1, x0: g.date, x1: g.date, line: {color: css('--muted'), width: 1, dash: 'dot'}}],
         annotations: [{yref: 'paper', y: 1, x: g.date, xanchor: 'left', yanchor: 'top', showarrow: false, font: {size: 11, color: css('--muted')}, text: ` guess made ${g.date}`}]},
       {responsive: true, displayModeBar: false});
-    $('trackFacts').innerHTML = `<dt>Guess made on</dt><dd>${g.date}, close ${money(g.close)}, ${pc(g.depth)} from the all-time high after ${span(g.days)}</dd>
-      <dt>Scenarios</dt><dd>${g.cases.length} of ${g.n} past falls this deep, picked because they got there at the most similar speed</dd>
-      <dt>Conclusion</dt><dd>${conclude(g)}</dd>`;
+    $('trackFacts').outerHTML = `<ul id="trackFacts" style="margin:12px 0;padding-left:20px;line-height:1.7">
+      <li><b>Guess on ${g.date}:</b> ${money(g.close)}, ${pc(g.depth)} from the all-time high (${span(g.days)} after it)</li>
+      <li><b>Scenarios:</b> ${g.cases.length} of ${g.n} past falls this deep, closest in speed</li>${conclude(g, best, ni)}</ul>`;
   }
   const newest = G.slice().reverse();
   $('guessDay').innerHTML = newest.map((g, j) => `<option value="${g.date}">${g.date}${j === 0 ? ' (latest)' : ''}</option>`).join('');
