@@ -1,15 +1,22 @@
 """Swing map per market: turning points, distance from highs, past falls this deep, and a saved guess each day.
 
-Usage: python market_highs.py [TICKER ...]   (Yahoo symbols, default: every index, commodity and company listed)
+Usage: python market_highs.py [TICKER ...]   (Yahoo symbols, default: every market in markets.csv)
+       python market_highs.py --add SYMBOL "Name" [--group GROUP]   (adds it to markets.csv, group "Companies"
+       unless given, then builds it; a symbol Yahoo has no data for is not added)
+Markets build in parallel, one process per CPU core; a failed market is printed and makes the exit code non-zero.
 Writes each market's data to data/<slug>.js, shown offline by the one page app.html?m=<slug>, plus highs_<slug>.html,
 a redirect to it for old links; today's numbers to market_highs.csv, and the day's guess to predictions/<slug>.json
 (older guesses kept and scored).
 Closes are kept in data/closes.csv, so a run only downloads the latest days.
 """
+import csv
 import json
 import math
+import os
 import re
 import sys
+import traceback
+from concurrent.futures import ProcessPoolExecutor
 from html import escape
 from pathlib import Path
 
@@ -18,39 +25,22 @@ import pandas as pd
 import yfinance as yf
 from plotly.offline import get_plotlyjs
 
-NAMES = {"^IXIC": "Nasdaq Composite", "^GSPC": "S&P 500", "^DJI": "Dow Jones", "^GDAXI": "DAX 40",
-         "^FTSE": "FTSE 100", "^FCHI": "CAC 40", "^N225": "Nikkei 225", "^KS11": "KOSPI", "^HSI": "Hang Seng",
-         "^BSESN": "Sensex", "^NDX": "Nasdaq-100", "^RUT": "Russell 2000", "^NYA": "NYSE Composite", "^DJT": "Dow Transports",
-         "^STOXX50E": "Euro Stoxx 50", "^STOXX": "Stoxx Europe 600", "000001.SS": "Shanghai Composite", "^NSEI": "Nifty 50",
-         "^GSPTSE": "S&P/TSX (Canada)", "^AXJO": "ASX 200 (Australia)"}
-# Companies with their own page: the Nasdaq-100 and the 30 Dow stocks (members as of 2026; update when the indices change)
-COMPANIES = {
-    "AAPL": "Apple", "ABNB": "Airbnb", "ADBE": "Adobe", "ADI": "Analog Devices", "ADP": "ADP", "ADSK": "Autodesk",
-    "AEP": "American Electric Power", "AMAT": "Applied Materials", "AMD": "AMD", "AMGN": "Amgen", "AMZN": "Amazon",
-    "APP": "AppLovin", "ARM": "Arm Holdings", "ASML": "ASML", "AVGO": "Broadcom", "AXON": "Axon", "AXP": "American Express",
-    "AZN": "AstraZeneca", "BA": "Boeing", "BKNG": "Booking Holdings", "BKR": "Baker Hughes", "CAT": "Caterpillar",
-    "CCEP": "Coca-Cola Europacific", "CDNS": "Cadence Design", "CEG": "Constellation Energy", "CHTR": "Charter Communications",
-    "CMCSA": "Comcast", "COST": "Costco", "CPRT": "Copart", "CRM": "Salesforce", "CRWD": "CrowdStrike", "CSCO": "Cisco",
-    "CSGP": "CoStar", "CSX": "CSX", "CTAS": "Cintas", "CTSH": "Cognizant", "CVX": "Chevron", "DASH": "DoorDash",
-    "DDOG": "Datadog", "DIS": "Disney", "DXCM": "Dexcom", "EXC": "Exelon", "FANG": "Diamondback Energy",
-    "FAST": "Fastenal", "FTNT": "Fortinet", "GEHC": "GE HealthCare", "GFS": "GlobalFoundries", "GILD": "Gilead",
-    "GOOGL": "Alphabet", "GS": "Goldman Sachs", "HD": "Home Depot", "HON": "Honeywell", "IBM": "IBM", "IDXX": "IDEXX",
-    "INTC": "Intel", "INTU": "Intuit", "ISRG": "Intuitive Surgical", "JNJ": "Johnson & Johnson", "JPM": "JPMorgan Chase",
-    "KDP": "Keurig Dr Pepper", "KHC": "Kraft Heinz", "KLAC": "KLA", "KO": "Coca-Cola", "LIN": "Linde", "LRCX": "Lam Research",
-    "LULU": "Lululemon", "MAR": "Marriott", "MCD": "McDonald's", "MCHP": "Microchip", "MDLZ": "Mondelez", "MELI": "MercadoLibre",
-    "META": "Meta", "MMM": "3M", "MNST": "Monster Beverage", "MRK": "Merck", "MRVL": "Marvell", "MSFT": "Microsoft",
-    "MSTR": "Strategy (MicroStrategy)", "MU": "Micron", "NFLX": "Netflix", "NKE": "Nike", "NVDA": "Nvidia", "NXPI": "NXP",
-    "ODFL": "Old Dominion", "ON": "ON Semiconductor", "ORLY": "O'Reilly Automotive", "PANW": "Palo Alto Networks",
-    "PAYX": "Paychex", "PCAR": "Paccar", "PDD": "PDD Holdings", "PEP": "PepsiCo", "PG": "Procter & Gamble", "PLTR": "Palantir",
-    "PYPL": "PayPal", "QCOM": "Qualcomm", "REGN": "Regeneron", "ROP": "Roper", "ROST": "Ross Stores", "SBUX": "Starbucks",
-    "SHOP": "Shopify", "SHW": "Sherwin-Williams", "SNPS": "Synopsys", "TEAM": "Atlassian", "TMUS": "T-Mobile US",
-    "TRI": "Thomson Reuters", "TRV": "Travelers", "TSLA": "Tesla", "TTD": "The Trade Desk", "TTWO": "Take-Two",
-    "TXN": "Texas Instruments", "UNH": "UnitedHealth", "V": "Visa", "VRSK": "Verisk", "VRTX": "Vertex", "VZ": "Verizon",
-    "WDAY": "Workday", "WMT": "Walmart", "XEL": "Xcel Energy", "ZS": "Zscaler",
-}
-OTHER = {"GC=F": "Gold (futures)", "SI=F": "Silver (futures)", "CL=F": "WTI crude oil (futures)", "BTC-USD": "Bitcoin"}
-GROUPS = {"Indices": NAMES, "Commodities and crypto": OTHER, "Companies": dict(sorted(COMPANIES.items(), key=lambda kv: kv[1]))}
-NAMES = {**NAMES, **OTHER, **COMPANIES}
+LIST = Path(__file__).parent / "markets.csv"  # every market: symbol, name, menu group
+
+
+def read_list():
+    with open(LIST, newline="", encoding="utf-8-sig") as f:  # -sig: Excel saves a BOM
+        rows = list(csv.DictReader(f))
+    groups = {}
+    for r in rows:
+        groups.setdefault(r["group"], {})[r["symbol"]] = r["name"]
+    # Indices, commodities and crypto keep the list's order; company groups are sorted by name
+    groups = {g: m if g in ("Indices", "Commodities and crypto") else dict(sorted(m.items(), key=lambda kv: kv[1]))
+              for g, m in groups.items()}
+    return {r["symbol"]: r["name"] for r in rows}, groups
+
+
+NAMES, GROUPS = read_list()
 SHOW_YEARS = 10
 WARMUP_YEARS = 1  # turning points start a year early so the first swing in view is a real one
 DAILY_ROWS = 30
@@ -82,8 +72,9 @@ def load(tickers):
     split = [t for t in have if t not in recent or (recent.loc[both, t] / old.loc[both, t] - 1).abs().max() > .01]
     full = [t for t in tickers if t not in have] + split
     close = recent.drop(columns=split, errors="ignore").combine_first(old)
-    if full:
-        close = close.drop(columns=full, errors="ignore").combine_first(fetch(full, period="max"))
+    if full:  # in chunks: hundreds of new symbols in one call get rate-limited into empty columns
+        new = pd.concat([fetch(full[i:i + 50], period="max") for i in range(0, len(full), 50)], axis=1)
+        close = close.drop(columns=full, errors="ignore").combine_first(new)
     STORE.parent.mkdir(exist_ok=True)
     close.to_csv(STORE)
     data = {t: close[t].dropna().loc[lambda x: x > 0] for t in tickers if t in close}  # WTI went negative in 2020
@@ -92,7 +83,7 @@ def load(tickers):
             print(f"No data for {t}: check the Yahoo symbol.", file=sys.stderr)
             data.pop(t, None)
         elif data[t].index[-1] < close.index[-1] - pd.Timedelta("10D"):  # delisted or taken over
-            print(f"No close for {t} since {data.pop(t).index[-1].date()}: remove it from the list.", file=sys.stderr)
+            print(f"No close for {t} since {data.pop(t).index[-1].date()}: remove it from markets.csv.", file=sys.stderr)
     if not data:
         sys.exit("No data downloaded; nothing written.")
     return data
@@ -381,31 +372,73 @@ def page_data(t, d, eps, pages, name):
     }
 
 
+def build(t, d, slug):
+    """One market's data file, redirect and guess; runs in a worker process. Returns its row for market_highs.csv."""
+    start = d.index[-1] - pd.DateOffset(years=SHOW_YEARS)
+    # Every market in the menu, also those not rebuilt in this run
+    pages = [{"name": n, "href": f"app.html?m={slug[o]}", "here": o == t, "group": g} for g, m in GROUPS.items() for o, n in m.items()]
+    payload = json.dumps(page_data(t, d, episodes(d, start), pages, slug[t])).replace("</", "<\\/")
+    (OUT / "data" / f"{slug[t]}.js").write_text(f"window.D = {payload};\n", encoding="utf-8")
+    # Old links, bookmarks and the scheduled task's file names keep working
+    url, title = f"app.html?m={slug[t]}", escape(f"Swing map: {NAMES.get(t, t)}")
+    (OUT / f"highs_{slug[t]}.html").write_text(
+        f'<!doctype html>\n<meta charset="utf-8">\n<title>{title}</title>\n'
+        f'<meta http-equiv="refresh" content="0; url={url}">\n<a href="{url}">{title}</a>\n', encoding="utf-8")
+    return {"index": NAMES.get(t, t), "date": d.index[-1].date(), "close": round(d.close.iloc[-1], 2),
+            "vs ATH %": round(d.pct_ATH.iloc[-1] * 100, 2), "ATH set on": d.prev_ath_date.iloc[-1].date()}
+
+
+def add(sym, name, group):
+    global NAMES, GROUPS
+    with open(LIST, "a+", newline="", encoding="utf-8") as f:
+        f.seek(0)
+        if not f.read().endswith("\n"):  # a hand edit may drop the last newline
+            f.write("\n")
+        csv.writer(f, lineterminator="\n").writerow([sym, name, group])
+    NAMES, GROUPS = read_list()
+    print(f"Added {sym} ({name}) to {group} in markets.csv.")
+
+
 def main():
-    tickers = sys.argv[1:] or list(NAMES)
-    data = {t: highs(s) for t, s in load(tickers).items()}
+    args, new = sys.argv[1:], None
+    if args[:1] == ["--add"]:
+        if len(args) not in (3, 5) or (len(args) == 5 and args[3] != "--group"):
+            sys.exit('Usage: python market_highs.py --add SYMBOL "Name" [--group GROUP]')
+        sym, group = args[1].upper(), (args[4:] or ["Companies"])[0]
+        if sym in NAMES:
+            print(f"{sym} is already in markets.csv as {NAMES[sym]}.")
+        elif group not in GROUPS:
+            sys.exit(f"Unknown group {group!r}: use one of {', '.join(GROUPS)}, or add a new group in markets.csv.")
+        else:
+            new = (sym, args[2], group)
+        args = [sym]
+    tickers = args or list(NAMES)
+    data = {t: highs(s) for t, s in load(tickers).items()}  # exits when Yahoo returns nothing
+    if new:
+        add(*new)  # only once Yahoo knows the symbol, so a wrong one never lands in the list
     # Only [a-z0-9_.-]: app.html accepts nothing else in ?m=
     slug = {t: re.sub(r"[^a-z0-9_.-]", "_", t.strip("^").lower()) for t in NAMES | data}
     (OUT / "plotly.min.js").write_text(get_plotlyjs(), encoding="utf-8")
     (OUT / "data").mkdir(exist_ok=True)
 
-    summary = []
-    for t, d in data.items():
-        start = d.index[-1] - pd.DateOffset(years=SHOW_YEARS)
-        # Every market in the menu, also those not rebuilt in this run
-        pages = [{"name": n, "href": f"app.html?m={slug[o]}", "here": o == t, "group": g} for g, m in GROUPS.items() for o, n in m.items()]
-        payload = json.dumps(page_data(t, d, episodes(d, start), pages, slug[t])).replace("</", "<\\/")
-        (OUT / "data" / f"{slug[t]}.js").write_text(f"window.D = {payload};\n", encoding="utf-8")
-        # Old links, bookmarks and the scheduled task's file names keep working
-        url, title = f"app.html?m={slug[t]}", escape(f"Swing map: {NAMES.get(t, t)}")
-        (OUT / f"highs_{slug[t]}.html").write_text(
-            f'<!doctype html>\n<meta charset="utf-8">\n<title>{title}</title>\n'
-            f'<meta http-equiv="refresh" content="0; url={url}">\n<a href="{url}">{title}</a>\n', encoding="utf-8")
-        summary.append({"index": NAMES.get(t, t), "date": d.index[-1].date(), "close": round(d.close.iloc[-1], 2),
-                        "vs ATH %": round(d.pct_ATH.iloc[-1] * 100, 2), "ATH set on": d.prev_ath_date.iloc[-1].date()})
-    table = pd.DataFrame(summary)
-    table.to_csv(OUT / "market_highs.csv", index=False)
-    print(table.to_string(index=False))
+    # Markets build in parallel (the back-test is the slow part); rows come back in list order
+    # Windows allows at most 61 worker processes
+    with ProcessPoolExecutor(min(61, os.process_cpu_count() or 1, len(data))) as pool:
+        jobs = {t: pool.submit(build, t, d, slug) for t, d in data.items()}
+    summary, failed = [], []
+    for t, job in jobs.items():
+        try:
+            summary.append(job.result())
+        except Exception as e:
+            print(f"{t} failed:", file=sys.stderr)
+            traceback.print_exception(e)  # includes the worker's traceback
+            failed.append(t)
+    if summary:
+        table = pd.DataFrame(summary)
+        table.to_csv(OUT / "market_highs.csv", index=False)
+        print(table.to_string(index=False))
+    if failed:  # non-zero exit, so the scheduled run shows the failure
+        sys.exit(f"{len(failed)} failed: {' '.join(failed)}")
 
 
 if __name__ == "__main__":

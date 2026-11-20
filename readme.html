@@ -30,13 +30,14 @@ a{color:var(--rise)}
 <p class="lede">One offline page for every market: how far it is below its all-time high, its real turning points, and what
 every past fall this deep did next. Each weekday after the close a new guess, a year ahead, is saved and scored against
 what really happens.</p>
-<p>It covers about 145 markets, grouped in the <b>Market</b> list at the top of the page:</p>
+<p>It covers about 540 markets, listed in <code>markets.csv</code> and grouped in the <b>Market</b> list at the top of the page:</p>
 <ul>
 <li><b>Indices:</b> Nasdaq Composite, Nasdaq-100, S&amp;P 500, Dow Jones, Dow Transports, Russell 2000, NYSE Composite,
 DAX 40, FTSE 100, CAC 40, Euro Stoxx 50, Stoxx Europe 600, Nikkei 225, KOSPI, Hang Seng, Shanghai Composite, Sensex,
 Nifty 50, S&amp;P/TSX and ASX 200.</li>
 <li><b>Commodities and crypto:</b> gold, silver, WTI crude oil and Bitcoin.</li>
-<li><b>Companies:</b> the Nasdaq-100 and the 30 Dow stocks, as listed in <code>COMPANIES</code> in <code>market_highs.py</code>.</li>
+<li><b>Companies:</b> the Nasdaq-100 and the 30 Dow stocks.</li>
+<li><b>S&amp;P 500:</b> the S&amp;P 500 members not already under Companies.</li>
 </ul>
 <p>
 Every tile, chart and table has an <b>i</b> button that explains it in plain words.</p>
@@ -45,16 +46,17 @@ the next fall can behave unlike any of them.</p>
 
 <h2>Quick start</h2>
 <pre><code>pip install yfinance pandas plotly
-python market_highs.py              # every market (10-20 minutes)
+python market_highs.py              # every market in markets.csv, one process per CPU core
 python market_highs.py "^IXIC" "^GSPC"  # only these (Yahoo symbols)</code></pre>
 <p>Run it from this folder. Quote symbols that start with <code>^</code>: in Windows <code>cmd</code> an unquoted <code>^</code> is dropped.
+A market that fails is printed with its error and the run ends with a non-zero exit code; the others are still built.
 A run for only some markets rewrites <code>market_highs.csv</code> with just those markets; the next full run fills it again.</p>
 <p>Then open <code>app.html</code> in a browser (the Nasdaq Composite), or pick a market with <code>?m=</code>:
 <code>app.html?m=gspc</code>. <code>highs_ixic.html</code> and the other <code>highs_*.html</code> still work and open the same page.
 It works offline; <code>plotly.min.js</code> is written next to it on every run. The data files are not kept in git; each machine builds its own.
 A market not built yet shows a short note with the command to build it.</p>
-<p><b>Add a company or index:</b> add its Yahoo symbol and name to <code>COMPANIES</code> (or <code>NAMES</code> for an index) in
-<code>market_highs.py</code>, then run <code>python market_highs.py "NFLX"</code>. Only the new market's history is downloaded;
+<p><b>Add a company or index:</b> <code>python market_highs.py --add "SPOT" "Spotify"</code> adds the Yahoo symbol and name to
+<code>markets.csv</code> (group Companies; <code>--group "Indices"</code> for an index) and builds it. A symbol Yahoo has no data for is not added. Only the new market's history is downloaded;
 the 23:00 run includes it from then on, and the other markets' menus list it after their next rebuild.</p>
 
 <h2>How it works</h2>
@@ -139,6 +141,7 @@ WTI's negative closes of April 2020 are dropped, since % moves and a log scale n
 <table>
 <tr><th>File</th><th>What it is</th></tr>
 <tr><td><code>market_highs.py</code></td><td>Downloads the closes, works out highs, falls, similar cases and guesses, writes the data files.</td></tr>
+<tr><td><code>markets.csv</code></td><td>Every market: Yahoo symbol, name and menu group. Edit it to add or remove markets.</td></tr>
 <tr><td><code>app.html</code></td><td>The page for every market: layout, charts and tooltips. Opens <code>data/&lt;market&gt;.js</code> for <code>?m=&lt;market&gt;</code>.</td></tr>
 <tr><td><code>data/&lt;market&gt;.js</code></td><td>One market's numbers for the page, rewritten when that market is built (not in git).</td></tr>
 <tr><td><code>highs_*.html</code></td><td>Short redirects to <code>app.html?m=&lt;market&gt;</code>, so old links and bookmarks keep working (not in git).</td></tr>
