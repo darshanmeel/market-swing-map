@@ -61,6 +61,7 @@ BACKFILL = 20  # on a market's first run, also make the last 20 days' guesses fr
 PICK = 8  # scenarios per guess: the past falls that reached today's depth at the most similar speed
 HORIZON = 252  # trading days (about a year) each guess looks ahead
 SHOW_GUESSES = 60  # newest guesses carried into the page; the file keeps all
+BT_STEP = 5  # back-test paths kept every 5th trading day, to keep the page small
 
 
 def load(tickers):
@@ -246,6 +247,34 @@ def other_ways(d, turned):
     return out
 
 
+def backtest(d):
+    """Each past fall from a record that got as deep as today: the five guesses made on its first close that deep,
+    from the closes up to that day only, against the real year after (returns, every 5th day)."""
+    now, c = d.pct_ATH.iloc[-1], d.close.to_numpy()
+    if now > -MIN_DIP:
+        return None
+    eps = episodes(d, d.index[0])
+    r3 = lambda a: [round(float(x), 3) for x in a]
+    rows = []
+    for _, e in eps[(eps["Depth %"] <= now * 100) & (eps.Status == "reversed")].iterrows():
+        after = d.pct_ATH[d.index > pd.Timestamp(e["Peak on"])]
+        hit = after[after <= now].index[0]
+        i = d.index.get_loc(hit)
+        past = d[d.index <= hit]
+        ways, s = {}, snapshot(past)
+        if s:  # past deeper falls: middle (as on the page), lowest and highest case
+            P = [np.array(x["path"]) / s["close"] - 1 for x in s["cases"]]
+            v = [sorted(q[j] for q in P if len(q) > j) for j in range(max(map(len, P)))]
+            ways["deeper"] = {"n": len(P), "mid": [x[len(x) // 2] for x in v], "lo": [x[0] for x in v], "hi": [x[-1] for x in v]}
+        turned = episodes(past, past.index[0])
+        ways |= other_ways(past, turned[turned.Status == "reversed"])
+        rows.append({"peak": str(e["Peak on"]), "hit": str(hit.date()), "depth": round(float(d.pct_ATH.iloc[i]), 3),
+                     "low": str(e["Low on"]), "bottom": round(float(e["Depth %"]) / 100, 3),
+                     "real": r3(c[i:i + HORIZON + 1:BT_STEP] / c[i] - 1),
+                     "ways": {k: {"n": w.get("n"), **{q: r3(w[q][::BT_STEP]) for q in ("mid", "lo", "hi") if q in w}} for k, w in ways.items()}})
+    return {"now": round(float(now), 3), "step": BT_STEP, "rows": rows}
+
+
 def highs_lows(d):
     day, before = d.index[-1], d.close.iloc[:-1]
     last = d.close.iloc[-1]
@@ -323,10 +352,11 @@ def page_data(t, d, eps, pages, name):
         "athValue": float(d.high_ATH.iloc[-1]), "athDate": str(d.prev_ath_date.iloc[-1].date()),
         "falls": [{"low": str(e["Low on"]), "depth": float(e["Depth %"]), "text": e["Fall"]} for _, e in big.iterrows()],
         "fallsTable": eps[eps["Depth %"] <= -BIG_FALL][cols].iloc[::-1].to_html(index=False, border=0, na_rep="-"),
-        "rank": [{"peak": str(e["Peak on"]), "low": str(e["Low on"]), "depth": float(e["Depth %"]), "now": e.Status != "reversed"}
+        "rank": [{"peak": str(e["Peak on"]), "low": str(e["Low on"]), "depth": float(e["Depth %"]), "now": e.Status != "reversed",
+                  "back": None if e.Status != "reversed" else str(e["Back at high"])}
                  for _, e in episodes(d, d.index[0]).iterrows() if e["Depth %"] <= -BIG_FALL or e.Status != "reversed"],
         "rankSwing": swing_falls(d.close),
-        "dailyTable": daily_table(d), "highsLows": highs_lows(d), "facts": facts(d, eps), "similar": similar(d), "track": track(name, d),
+        "dailyTable": daily_table(d), "highsLows": highs_lows(d), "facts": facts(d, eps), "similar": similar(d), "track": track(name, d), "backtest": backtest(d),
     }
 
 
