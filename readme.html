@@ -30,18 +30,25 @@ a{color:var(--rise)}
 <p class="lede">One offline page per market: how far it is below its all-time high, its real turning points, and what
 every past fall this deep did next. Each weekday after the close a new guess, a year ahead, is saved and scored against
 what really happens.</p>
-<p>It covers 13 markets: Nasdaq Composite, S&amp;P 500, Dow Jones, DAX 40, FTSE 100, CAC 40, Nikkei 225, KOSPI,
-Hang Seng, Sensex, gold, silver and WTI crude oil. Pick one from the <b>Market</b> list at the top of any page.
+<p>It covers about 145 markets, grouped in the <b>Market</b> list at the top of any page:</p>
+<ul>
+<li><b>Indices:</b> Nasdaq Composite, Nasdaq-100, S&amp;P 500, Dow Jones, Dow Transports, Russell 2000, NYSE Composite,
+DAX 40, FTSE 100, CAC 40, Euro Stoxx 50, Stoxx Europe 600, Nikkei 225, KOSPI, Hang Seng, Shanghai Composite, Sensex,
+Nifty 50, S&amp;P/TSX and ASX 200.</li>
+<li><b>Commodities and crypto:</b> gold, silver, WTI crude oil and Bitcoin.</li>
+<li><b>Companies:</b> the Nasdaq-100 and the 30 Dow stocks, as listed in <code>COMPANIES</code> in <code>market_highs.py</code>.</li>
+</ul>
+<p>
 Every tile, chart and table has an <b>i</b> button that explains it in plain words.</p>
 <p class="note">Not investment advice and not a forecast. The pages show what happened after similar falls in the past;
 the next fall can behave unlike any of them.</p>
 
 <h2>Quick start</h2>
 <pre><code>pip install yfinance pandas plotly
-python market_highs.py              # all 13 markets
+python market_highs.py              # every market (10-20 minutes)
 python market_highs.py ^IXIC ^GSPC  # only these (Yahoo symbols)</code></pre>
 <p>Then open <code>highs_ixic.html</code> (or any <code>highs_*.html</code>) in a browser. The pages work offline;
-<code>plotly.min.js</code> is written next to them on every run.</p>
+<code>plotly.min.js</code> is written next to them on every run. Generated pages are not kept in git; each machine builds its own.</p>
 
 <h2>How it works</h2>
 <svg viewBox="0 0 820 150" role="img" aria-label="Flow: Yahoo Finance daily closes go into market_highs.py, which writes one page per market from swing_template.html, a CSV of today's numbers, and one saved guess per market per day in predictions/">
@@ -63,7 +70,7 @@ All-time highs use the full history Yahoo has for each market, so a high is a re
 <tr><td>Top tiles</td><td>Last close, distance from the all-time high, the current swing, trend shape (higher or lower highs and lows), and where today sits in its 5-year range.</td></tr>
 <tr><td>Price with turning points</td><td>Real swings only. A high or low counts once the price reverses by the chosen size (3% to 20%), so daily 1–2% noise is ignored. Labels give the % move, points and length; a fall that ended below an earlier record also shows its total fall from that record.</td></tr>
 <tr><td>Swings, last turns, typical swing, levels</td><td>Every rise and fall in view with HH / LH / HL / LL / ATH tags, and support and resistance from past turns.</td></tr>
-<tr><td>How bad is this fall?</td><td>Every fall of 10% or more from a record, deepest first, with today's fall marked: last 10 years or all time.</td></tr>
+<tr><td>How bad is this fall?</td><td>Every fall of 10% or more, deepest first, with today's fall marked. Measured from the record (a drop before the old high is regained stays part of the earlier fall) or from the last swing high (every 10% drop counts on its own); last 10 years or all time.</td></tr>
 <tr><td>Below the all-time high, each day</td><td>The drawdown chart: how deep and how long every fall was.</td></tr>
 <tr><td>Every past fall this deep</td><td>All earlier falls from a record that got at least as deep as today: how many fell 5, 10 or 20% further (with the price that would mean today), the total fall from the high, the days to get there and on to the low, the time back to the old high, and the rise before the next 10% fall.</td></tr>
 <tr><td>What each past fall did next</td><td>Each past case's next year, applied to today's close, one coloured line each. Buttons replay it from 10, 20 or 30% lower.</td></tr>
@@ -99,7 +106,7 @@ and appends the output to <code>predictions/run.log</code>:</p>
 <pre><code>$a = New-ScheduledTaskAction -Execute "cmd.exe" -WorkingDirectory "&lt;repo folder&gt;" `
      -Argument '/c "python -P -E market_highs.py &gt;&gt; predictions\run.log 2&gt;&amp;1"'
 $t = New-ScheduledTaskTrigger -Weekly -DaysOfWeek Monday,Tuesday,Wednesday,Thursday,Friday -At 23:00
-$s = New-ScheduledTaskSettingsSet -StartWhenAvailable -RunOnlyIfNetworkAvailable
+$s = New-ScheduledTaskSettingsSet -StartWhenAvailable -RunOnlyIfNetworkAvailable -ExecutionTimeLimit (New-TimeSpan -Hours 2)
 Register-ScheduledTask -TaskName "Swing map daily" -Action $a -Trigger $t -Settings $s</code></pre>
 <p>The task runs while the user is logged on; if the computer is off at 23:00 it runs at the next start.</p>
 

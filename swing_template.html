@@ -362,12 +362,12 @@ function similarFalls() {
       hovertemplate: R.map(r => `High ${r.peak}: ${pc(r.depth)} in total by ${r.low}, ${pc(r.more)} more from the ${pc(S.now)} level.<br>The same fall today would end at ${money(D.athValue * (1 + r.depth))}<extra></extra>`)}),
     bar(R.map(r => Math.min(r.hitDays, dayCap)), grey, 'x2', {hovertemplate: R.map(r => `${span(r.hitDays)} from the high to ${pc(S.now)}<extra></extra>`)}),
     bar(R.map(r => Math.max(0, Math.min(r.hitDays + r.moreDays, dayCap) - Math.min(r.hitDays, dayCap))), col, 'x2',
-      {text: R.map(r => `${span(r.hitDays)} + ${span(r.moreDays)}`), textposition: 'outside',
+      {text: R.map(r => `${mon(r.peak)}: ${span(r.hitDays)} + ${span(r.moreDays)}`), textposition: 'outside',
        hovertemplate: R.map(r => `${span(r.hitDays)} to reach ${pc(S.now)}, then ${span(r.moreDays)} more to the low<extra></extra>`)}),
     bar(mo, css('--rise'), 'x3', {yaxis: 'y2', text: R.map(r => span(r.recDays)), textposition: 'outside',
       hovertemplate: R.map(r => `Low ${r.low}: back at the old high after ${span(r.recDays)}<extra></extra>`)}),
     bar(R.map(r => Math.min((r.up || 0) * 100, upCap)), css('--up'), 'x4', {yaxis: 'y2', textposition: 'outside',
-      text: R.map(r => r.up == null ? '' : `+${(r.up * 100).toFixed(0)}%, ${span(r.upDays)}${/so far/.test(r.rise) ? ' so far' : ''}`),
+      text: R.map(r => r.up == null ? '' : `${mon(r.peak)}: +${(r.up * 100).toFixed(0)}%, ${span(r.upDays)}${/so far/.test(r.rise) ? ' so far' : ''}`),
       hovertemplate: R.map(r => `From the ${r.low} low: ${r.rise || '-'} before the next 10% fall began<extra></extra>`)}),
   ], {margin: {l: 80, r: 90, t: 34, b: 30}, height: 150 + R.length * 50, showlegend: false, bargap: .3, barmode: 'stack',
       paper_bgcolor: 'rgba(0,0,0,0)', plot_bgcolor: 'rgba(0,0,0,0)', font: {size: 11},
@@ -598,7 +598,8 @@ rankFalls();
 document.querySelectorAll('h2[data-k]').forEach(h => h.insertAdjacentHTML('beforeend', tip(h.dataset.k)));
 $('asof').textContent = dates[N - 1]; $('src').textContent = D.ticker;
 $('title').textContent = `Where the ${D.name} turned, and what the turns have in common`;
-$('switch').innerHTML = D.pages.map(p => `<option value="${p.href}"${p.here ? ' selected' : ''}>${p.name}</option>`).join('');
+$('switch').innerHTML = [...new Set(D.pages.map(p => p.group))].map(g => `<optgroup label="${g}">` +
+  D.pages.filter(p => p.group === g).map(p => `<option value="${p.href}"${p.here ? ' selected' : ''}>${p.name}</option>`).join('') + '</optgroup>').join('');
 $('falls').innerHTML = D.fallsTable; $('daily').innerHTML = D.dailyTable;
 $('facts').innerHTML = D.facts.map(([k, v]) => `<dt>${k}</dt><dd>${v}</dd>`).join('');
 $('hl').innerHTML = '<tr><th>Compared with</th><th class="r">Level</th><th>Set on</th><th class="r">Last close</th></tr>' +

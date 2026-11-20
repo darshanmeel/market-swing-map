@@ -1,6 +1,6 @@
 """Swing map per market: turning points, distance from highs, past falls this deep, and a saved guess each day.
 
-Usage: python market_highs.py [TICKER ...]   (Yahoo symbols, default: every market in NAMES)
+Usage: python market_highs.py [TICKER ...]   (Yahoo symbols, default: every index, commodity and company listed)
 Writes one offline page per market (highs_<ticker>.html, from swing_template.html), today's numbers to
 market_highs.csv, and the day's guess to predictions/<ticker>.json (older guesses kept and scored).
 """
@@ -16,7 +16,37 @@ from plotly.offline import get_plotlyjs
 
 NAMES = {"^IXIC": "Nasdaq Composite", "^GSPC": "S&P 500", "^DJI": "Dow Jones", "^GDAXI": "DAX 40",
          "^FTSE": "FTSE 100", "^FCHI": "CAC 40", "^N225": "Nikkei 225", "^KS11": "KOSPI", "^HSI": "Hang Seng",
-         "^BSESN": "Sensex", "GC=F": "Gold (futures)", "SI=F": "Silver (futures)", "CL=F": "WTI crude oil (futures)"}
+         "^BSESN": "Sensex", "^NDX": "Nasdaq-100", "^RUT": "Russell 2000", "^NYA": "NYSE Composite", "^DJT": "Dow Transports",
+         "^STOXX50E": "Euro Stoxx 50", "^STOXX": "Stoxx Europe 600", "000001.SS": "Shanghai Composite", "^NSEI": "Nifty 50",
+         "^GSPTSE": "S&P/TSX (Canada)", "^AXJO": "ASX 200 (Australia)"}
+# Companies with their own page: the Nasdaq-100 and the 30 Dow stocks (members as of 2026; update when the indices change)
+COMPANIES = {
+    "AAPL": "Apple", "ABNB": "Airbnb", "ADBE": "Adobe", "ADI": "Analog Devices", "ADP": "ADP", "ADSK": "Autodesk",
+    "AEP": "American Electric Power", "AMAT": "Applied Materials", "AMD": "AMD", "AMGN": "Amgen", "AMZN": "Amazon",
+    "APP": "AppLovin", "ARM": "Arm Holdings", "ASML": "ASML", "AVGO": "Broadcom", "AXON": "Axon", "AXP": "American Express",
+    "AZN": "AstraZeneca", "BA": "Boeing", "BKNG": "Booking Holdings", "BKR": "Baker Hughes", "CAT": "Caterpillar",
+    "CCEP": "Coca-Cola Europacific", "CDNS": "Cadence Design", "CEG": "Constellation Energy", "CHTR": "Charter Communications",
+    "CMCSA": "Comcast", "COST": "Costco", "CPRT": "Copart", "CRM": "Salesforce", "CRWD": "CrowdStrike", "CSCO": "Cisco",
+    "CSGP": "CoStar", "CSX": "CSX", "CTAS": "Cintas", "CTSH": "Cognizant", "CVX": "Chevron", "DASH": "DoorDash",
+    "DDOG": "Datadog", "DIS": "Disney", "DXCM": "Dexcom", "EA": "Electronic Arts", "EXC": "Exelon", "FANG": "Diamondback Energy",
+    "FAST": "Fastenal", "FTNT": "Fortinet", "GEHC": "GE HealthCare", "GFS": "GlobalFoundries", "GILD": "Gilead",
+    "GOOGL": "Alphabet", "GS": "Goldman Sachs", "HD": "Home Depot", "HON": "Honeywell", "IBM": "IBM", "IDXX": "IDEXX",
+    "INTC": "Intel", "INTU": "Intuit", "ISRG": "Intuitive Surgical", "JNJ": "Johnson & Johnson", "JPM": "JPMorgan Chase",
+    "KDP": "Keurig Dr Pepper", "KHC": "Kraft Heinz", "KLAC": "KLA", "KO": "Coca-Cola", "LIN": "Linde", "LRCX": "Lam Research",
+    "LULU": "Lululemon", "MAR": "Marriott", "MCD": "McDonald's", "MCHP": "Microchip", "MDLZ": "Mondelez", "MELI": "MercadoLibre",
+    "META": "Meta", "MMM": "3M", "MNST": "Monster Beverage", "MRK": "Merck", "MRVL": "Marvell", "MSFT": "Microsoft",
+    "MSTR": "Strategy (MicroStrategy)", "MU": "Micron", "NFLX": "Netflix", "NKE": "Nike", "NVDA": "Nvidia", "NXPI": "NXP",
+    "ODFL": "Old Dominion", "ON": "ON Semiconductor", "ORLY": "O'Reilly Automotive", "PANW": "Palo Alto Networks",
+    "PAYX": "Paychex", "PCAR": "Paccar", "PDD": "PDD Holdings", "PEP": "PepsiCo", "PG": "Procter & Gamble", "PLTR": "Palantir",
+    "PYPL": "PayPal", "QCOM": "Qualcomm", "REGN": "Regeneron", "ROP": "Roper", "ROST": "Ross Stores", "SBUX": "Starbucks",
+    "SHOP": "Shopify", "SHW": "Sherwin-Williams", "SNPS": "Synopsys", "TEAM": "Atlassian", "TMUS": "T-Mobile US",
+    "TRI": "Thomson Reuters", "TRV": "Travelers", "TSLA": "Tesla", "TTD": "The Trade Desk", "TTWO": "Take-Two",
+    "TXN": "Texas Instruments", "UNH": "UnitedHealth", "V": "Visa", "VRSK": "Verisk", "VRTX": "Vertex", "VZ": "Verizon",
+    "WBD": "Warner Bros. Discovery", "WDAY": "Workday", "WMT": "Walmart", "XEL": "Xcel Energy", "ZS": "Zscaler",
+}
+OTHER = {"GC=F": "Gold (futures)", "SI=F": "Silver (futures)", "CL=F": "WTI crude oil (futures)", "BTC-USD": "Bitcoin"}
+GROUPS = {"Indices": NAMES, "Commodities and crypto": OTHER, "Companies": dict(sorted(COMPANIES.items(), key=lambda kv: kv[1]))}
+NAMES = {**NAMES, **OTHER, **COMPANIES}
 SHOW_YEARS = 10
 WARMUP_YEARS = 1  # turning points start a year early so the first swing in view is a real one
 DAILY_ROWS = 30
@@ -271,15 +301,16 @@ def page_data(t, d, eps, pages, name):
 def main():
     tickers = sys.argv[1:] or list(NAMES)
     data = {t: highs(s) for t, s in load(tickers).items()}
-    slug = {t: t.strip('^').replace('=', '_').lower() for t in data}
-    files = {t: f"highs_{slug[t]}.html" for t in data}
+    slug = {t: t.strip('^').replace('=', '_').lower() for t in NAMES | data}
+    files = {t: f"highs_{slug[t]}.html" for t in slug}
     template = (OUT / "swing_template.html").read_text(encoding="utf-8")
     (OUT / "plotly.min.js").write_text(get_plotlyjs(), encoding="utf-8")
 
     summary = []
     for t, d in data.items():
         start = d.index[-1] - pd.DateOffset(years=SHOW_YEARS)
-        pages = [{"name": NAMES.get(o, o), "href": files[o], "here": o == t} for o in data]
+        # Every page in the menu, also those not rebuilt in this run
+        pages = [{"name": n, "href": files[o], "here": o == t, "group": g} for g, m in GROUPS.items() for o, n in m.items()]
         payload = json.dumps(page_data(t, d, episodes(d, start), pages, slug[t])).replace("</", "<\\/")
         html = template.replace("__TITLE__", escape(f"Swing map: {NAMES.get(t, t)}")).replace("__DATA__", payload)
         (OUT / files[t]).write_text(html, encoding="utf-8")
