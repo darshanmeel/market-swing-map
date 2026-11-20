@@ -46,7 +46,9 @@ the next fall can behave unlike any of them.</p>
 <h2>Quick start</h2>
 <pre><code>pip install yfinance pandas plotly
 python market_highs.py              # every market (10-20 minutes)
-python market_highs.py ^IXIC ^GSPC  # only these (Yahoo symbols)</code></pre>
+python market_highs.py "^IXIC" "^GSPC"  # only these (Yahoo symbols)</code></pre>
+<p>Run it from this folder. Quote symbols that start with <code>^</code>: in Windows <code>cmd</code> an unquoted <code>^</code> is dropped.
+A run for only some markets rewrites <code>market_highs.csv</code> with just those markets; the next full run fills it again.</p>
 <p>Then open <code>highs_ixic.html</code> (or any <code>highs_*.html</code>) in a browser. The pages work offline;
 <code>plotly.min.js</code> is written next to them on every run. Generated pages are not kept in git; each machine builds its own.</p>
 
@@ -132,6 +134,7 @@ WTI's negative closes of April 2020 are dropped, since % moves and a log scale n
 <tr><td><code>highs_*.html</code>, <code>plotly.min.js</code></td><td>Generated pages and the chart library they load.</td></tr>
 <tr><td><code>predictions/</code></td><td>One file per market with every saved daily guess.</td></tr>
 <tr><td><code>market_highs.csv</code></td><td>Today's close and distance from the all-time high, per market.</td></tr>
+<tr><td><code>data/closes.csv</code></td><td>Every market's daily closes, kept between runs (not in git). A run downloads only the last few days; a market's full history again only when it is new or a split changed its old closes. Delete the file to download everything again.</td></tr>
 </table>
 <p>Prices come from Yahoo Finance through the <code>yfinance</code> package and are subject to Yahoo's terms of use.</p>
 

@@ -3,6 +3,7 @@
 Usage: python market_highs.py [TICKER ...]   (Yahoo symbols, default: every index, commodity and company listed)
 Writes one offline page per market (highs_<ticker>.html, from swing_template.html), today's numbers to
 market_highs.csv, and the day's guess to predictions/<ticker>.json (older guesses kept and scored).
+Closes are kept in data/closes.csv, so a run only downloads the latest days.
 """
 import json
 import math
@@ -56,6 +57,7 @@ BIG_FALL = 10  # falls this deep (%) get a label and a row in the falls table
 WINDOWS = {"1-year": "365D", "6-month": "182D"}
 FWD = 252  # trading days (about a year) followed after a past fall reached today's depth
 OUT = Path(__file__).parent
+STORE = OUT / "data" / "closes.csv"
 PRED = OUT / "predictions"  # one file per market: every day's prediction, kept
 BACKFILL = 20  # on a market's first run, also make the last 20 days' guesses from the data each day had
 PICK = 8  # scenarios per guess: the past falls that reached today's depth at the most similar speed
@@ -64,9 +66,24 @@ SHOW_GUESSES = 60  # newest guesses carried into the page; the file keeps all
 BT_STEP = 5  # back-test paths kept every 5th trading day, to keep the page small
 
 
+def fetch(tickers, **when):
+    return yf.download(tickers, auto_adjust=False, progress=False, **when)["Close"]
+
+
 def load(tickers):
-    # Full history so the all-time high is real, not just the max of the shown window.
-    close = yf.download(tickers, period="max", auto_adjust=False, progress=False)["Close"]
+    # Closes are kept in data/closes.csv; a run only fetches the last few days, and a market's full history
+    # (so the all-time high is real) only when it is new or its old closes changed (a split rescales them).
+    old = pd.read_csv(STORE, index_col=0, parse_dates=True) if STORE.exists() else pd.DataFrame()
+    have = [t for t in tickers if t in old and old[t].notna().any()]
+    recent = fetch(have, start=old.index[-1] - pd.Timedelta("10D")) if have else pd.DataFrame()
+    both = recent.index.intersection(old.index[:-1])  # the last stored close may be a mid-day price
+    split = [t for t in have if t not in recent or (recent.loc[both, t] / old.loc[both, t] - 1).abs().max() > .01]
+    full = [t for t in tickers if t not in have] + split
+    close = recent.drop(columns=split, errors="ignore").combine_first(old)
+    if full:
+        close = close.drop(columns=full, errors="ignore").combine_first(fetch(full, period="max"))
+    STORE.parent.mkdir(exist_ok=True)
+    close.to_csv(STORE)
     data = {t: close[t].dropna().loc[lambda x: x > 0] for t in tickers if t in close}  # WTI went negative in 2020
     for t in tickers:
         if t not in data or data[t].empty:
