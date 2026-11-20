@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Market swing map: how far a market is from its highs, and what past falls did next</title>
+<style>
+:root{--ground:#F5F5F2;--card:#fff;--ink:#16181D;--muted:#5E6673;--line:#E2E4E8;--rise:#1F5BD8;--fall:#B8480F}
+body{margin:0;background:var(--ground);color:var(--ink);font:16px/1.6 system-ui,-apple-system,Segoe UI,sans-serif}
+main{max-width:860px;margin:0 auto;padding:40px 22px 60px}
+h1{font-size:30px;line-height:1.25;margin:0 0 12px}
+h2{font-size:21px;margin:40px 0 10px;padding-top:14px;border-top:1px solid var(--line)}
+h3{font-size:17px;margin:24px 0 6px}
+.lede{font-size:18px;margin:0 0 18px}
+code,pre{font:14px ui-monospace,Consolas,monospace}
+pre{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:12px 14px;overflow-x:auto}
+code{background:#ECEDEF;padding:1px 5px;border-radius:4px}pre code{background:none;padding:0}
+table{border-collapse:collapse;width:100%;font-size:15px;background:var(--card)}
+th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+th{color:var(--muted);font-weight:600}
+.note{border-left:3px solid var(--fall);padding:4px 14px;margin:16px 0;color:var(--muted)}
+svg{max-width:100%;height:auto;display:block;margin:12px 0}
+a{color:var(--rise)}
+@media (prefers-color-scheme:dark){:root{--ground:#121316;--card:#1B1D22;--ink:#E8E9EC;--muted:#9AA1AD;--line:#2C2F36}code{background:#2C2F36}}
+</style>
+</head>
+<body>
+<main>
+<h1>Market swing map</h1>
+<p class="lede">One offline page per market: how far it is below its all-time high, its real turning points, and what
+every past fall this deep did next. Each weekday after the close a new guess, a year ahead, is saved and scored against
+what really happens.</p>
+<p>It covers 13 markets: Nasdaq Composite, S&amp;P 500, Dow Jones, DAX 40, FTSE 100, CAC 40, Nikkei 225, KOSPI,
+Hang Seng, Sensex, gold, silver and WTI crude oil. Pick one from the <b>Market</b> list at the top of any page.
+Every tile, chart and table has an <b>i</b> button that explains it in plain words.</p>
+<p class="note">Not investment advice and not a forecast. The pages show what happened after similar falls in the past;
+the next fall can behave unlike any of them.</p>
+
+<h2>Quick start</h2>
+<pre><code>pip install yfinance pandas plotly
+python market_highs.py              # all 13 markets
+python market_highs.py ^IXIC ^GSPC  # only these (Yahoo symbols)</code></pre>
+<p>Then open <code>highs_ixic.html</code> (or any <code>highs_*.html</code>) in a browser. The pages work offline;
+<code>plotly.min.js</code> is written next to them on every run.</p>
+
+<h2>How it works</h2>
+<svg viewBox="0 0 820 150" role="img" aria-label="Flow: Yahoo Finance daily closes go into market_highs.py, which writes one page per market from swing_template.html, a CSV of today's numbers, and one saved guess per market per day in predictions/">
+  <style>.b{fill:var(--card,#fff);stroke:#C9CDD3}.t{font:14px system-ui,sans-serif;fill:currentColor}.s{font:12px system-ui,sans-serif;fill:#5E6673}.a{stroke:#8B939E;stroke-width:1.5;fill:none;marker-end:url(#h)}</style>
+  <defs><marker id="h" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0L10,5L0,10z" fill="#8B939E"/></marker></defs>
+  <rect class="b" x="10" y="50" width="160" height="50" rx="8"/><text class="t" x="90" y="72" text-anchor="middle">Yahoo Finance</text><text class="s" x="90" y="90" text-anchor="middle">full daily history</text>
+  <rect class="b" x="240" y="50" width="180" height="50" rx="8"/><text class="t" x="330" y="72" text-anchor="middle">market_highs.py</text><text class="s" x="330" y="90" text-anchor="middle">+ swing_template.html</text>
+  <rect class="b" x="500" y="6" width="310" height="40" rx="8"/><text class="t" x="655" y="31" text-anchor="middle">highs_&lt;market&gt;.html (one per market)</text>
+  <rect class="b" x="500" y="56" width="310" height="40" rx="8"/><text class="t" x="655" y="81" text-anchor="middle">predictions/&lt;market&gt;.json (a guess a day)</text>
+  <rect class="b" x="500" y="106" width="310" height="40" rx="8"/><text class="t" x="655" y="131" text-anchor="middle">market_highs.csv (today's numbers)</text>
+  <path class="a" d="M170 75H236"/><path class="a" d="M420 70L496 28"/><path class="a" d="M420 75H496"/><path class="a" d="M420 80L496 124"/>
+</svg>
+<p>All the history maths runs in Python once per run; the page only redraws charts when a setting changes.
+All-time highs use the full history Yahoo has for each market, so a high is a real record, not just the top of the shown window.</p>
+
+<h2>What each page shows</h2>
+<table>
+<tr><th>Section</th><th>What it answers</th></tr>
+<tr><td>Top tiles</td><td>Last close, distance from the all-time high, the current swing, trend shape (higher or lower highs and lows), and where today sits in its 5-year range.</td></tr>
+<tr><td>Price with turning points</td><td>Real swings only. A high or low counts once the price reverses by the chosen size (3% to 20%), so daily 1–2% noise is ignored. Labels give the % move, points and length.</td></tr>
+<tr><td>Swings, last turns, typical swing, levels</td><td>Every rise and fall in view with HH / LH / HL / LL / ATH tags, and support and resistance from past turns.</td></tr>
+<tr><td>Below the all-time high, each day</td><td>The drawdown chart: how deep and how long every fall was.</td></tr>
+<tr><td>Every past fall this deep</td><td>All earlier falls from a record that got at least as deep as today: how many fell 5, 10 or 20% further (with the price that would mean today), the total fall from the high, the days to get there and on to the low, the time back to the old high, and the rise before the next 10% fall.</td></tr>
+<tr><td>What each past fall did next</td><td>Each past case's next year, applied to today's close, one coloured line each. Buttons replay it from 10, 20 or 30% lower.</td></tr>
+<tr><td>Would this have worked before?</td><td>A back-test: at each past fall, what earlier falls alone suggested, against what really happened.</td></tr>
+<tr><td>Daily guesses</td><td>The saved guesses, one chart per guess day, with the real closes since drawn on top.</td></tr>
+<tr><td>Falls of 10% or more, highs and lows, last 30 days</td><td>The tables behind the charts.</td></tr>
+</table>
+
+<h2>Daily guesses</h2>
+<p>Each run saves one guess per market for that day's close in <code>predictions/&lt;market&gt;.json</code>. A rerun on the
+same day replaces that day's guess; older days are never changed.</p>
+<h3>How a guess is made</h3>
+<ol>
+<li>Take every past fall from an all-time high that got at least as deep as today and later recovered.</li>
+<li>Keep the 8 that got to today's depth at the most similar speed (days from the high).</li>
+<li>From the day each one first reached today's depth, replay its next year as % moves from today's close.</li>
+</ol>
+<h3>How it is scored</h3>
+<p>The chart shows one guess day at a time (pick it from the list), zoomed to 1 week, 1 month, 6 months or 1 year,
+with the real closes printed on the black line. After every close, each saved guess gets the real close added. A guess is <b>inside</b> while the real close sits
+between its lowest and highest scenario for that day, <b>below</b> or <b>above</b> when it leaves them, the sign that
+this fall is unlike the past ones. The page also names the scenario the real path has followed most closely so far.
+On a market's first run, the last 20 trading days' guesses are made from the data each day had, so scoring starts at once.</p>
+<h3>Running it every day</h3>
+<p>On Windows a scheduled task runs the script Monday to Friday at 23:00 (after the US close at 22:00 Central European time)
+and appends the output to <code>predictions/run.log</code>:</p>
+<pre><code>$a = New-ScheduledTaskAction -Execute "cmd.exe" -WorkingDirectory "&lt;repo folder&gt;" `
+     -Argument '/c "python -P -E market_highs.py &gt;&gt; predictions\run.log 2&gt;&amp;1"'
+$t = New-ScheduledTaskTrigger -Weekly -DaysOfWeek Monday,Tuesday,Wednesday,Thursday,Friday -At 23:00
+$s = New-ScheduledTaskSettingsSet -StartWhenAvailable -RunOnlyIfNetworkAvailable
+Register-ScheduledTask -TaskName "Swing map daily" -Action $a -Trigger $t -Settings $s</code></pre>
+<p>The task runs while the user is logged on; if the computer is off at 23:00 it runs at the next start.</p>
+
+<h2>Limits</h2>
+<ul>
+<li>Small samples: most markets have 5 to 20 past falls this deep, each with its own cause.</li>
+<li>Gold, silver and oil use Yahoo's front-month futures, which start in 2000; their "all-time high" is the highest since then.
+WTI's negative closes of April 2020 are dropped, since % moves and a log scale need positive prices.</li>
+<li>A run during market hours uses the live price as the last close; the evening run replaces it.</li>
+</ul>
+
+<h2>Files</h2>
+<table>
+<tr><th>File</th><th>What it is</th></tr>
+<tr><td><code>market_highs.py</code></td><td>Downloads the closes, works out highs, falls, similar cases and guesses, writes the pages.</td></tr>
+<tr><td><code>swing_template.html</code></td><td>The page: layout, charts and tooltips. The script fills in the data.</td></tr>
+<tr><td><code>highs_*.html</code>, <code>plotly.min.js</code></td><td>Generated pages and the chart library they load.</td></tr>
+<tr><td><code>predictions/</code></td><td>One file per market with every saved daily guess.</td></tr>
+<tr><td><code>market_highs.csv</code></td><td>Today's close and distance from the all-time high, per market.</td></tr>
+</table>
+<p>Prices come from Yahoo Finance through the <code>yfinance</code> package and are subject to Yahoo's terms of use.</p>
+
+<h2>Licence</h2>
+<p>Licensed under either of the <a href="LICENSE-APACHE">Apache License, Version 2.0</a> or the
+<a href="LICENSE-MIT">MIT licence</a>, at your option. Copyright © 2026 Darshan Singh.</p>
+</main>
+</body>
+</html>
