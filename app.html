@@ -373,7 +373,7 @@ function missing() {
   const p = document.createElement('p');
   p.className = 'verdict';
   p.textContent = /^[a-z0-9_.-]+$/.test(M)
-    ? `No data for "${M}" yet (data/${M}.js). Build it from this folder with: python market_highs.py (every market) or python market_highs.py "${M.toUpperCase()}" (just this one). "${M}" is the Yahoo symbol in lower case without its ^ and with _ for signs such as =, so an index needs the ^ back ("^GSPC" for gspc) and gc_f is "GC=F".`
+    ? `${M.toUpperCase()} is not built yet. In this folder run: python market_highs.py "^${M.toUpperCase()}" for an index, "${M.toUpperCase()}" for a company, or python market_highs.py for every market.`
     : 'Unknown market. Pick one with app.html?m=<name>, for example app.html?m=ixic.';
   if (M !== 'ixic') p.append(' ', Object.assign(document.createElement('a'), {href: 'app.html', textContent: 'Back to the Nasdaq Composite'}));
   document.querySelector('main').replaceChildren(p);
