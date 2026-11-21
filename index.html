@@ -28,7 +28,7 @@ button{font:inherit;color:inherit;cursor:pointer}
 .sc[aria-pressed=true]{border-color:var(--ink);box-shadow:inset 0 0 0 1px var(--ink)}
 .pb{display:block;height:4px;background:var(--line2);border-radius:2px;overflow:hidden}.pb i{display:block;height:100%;background:var(--ink2)}.pb i.u{background:var(--rise)}.pb i.d{background:var(--fall)}
 .wl{display:flex;flex-wrap:wrap;gap:8px}.wl a{border:1px solid var(--line);border-radius:6px;padding:4px 10px;text-decoration:none;font-size:13px}.wl a span{color:var(--ink2);font:12px var(--mono)}
-.looks{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:10px}
+.tipi{color:var(--muted);font-weight:400;cursor:help}.looks{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:10px}
 .lk{border:1px solid var(--line);border-radius:8px;padding:12px;display:flex;flex-direction:column;gap:8px}
 .lk ol{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:7px}
 .lk li{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:0 8px;font-size:13px}.lk li b{font-size:13px;font-weight:600;text-align:right}
@@ -316,22 +316,22 @@ function looks(has) {
   const day = e => Math.abs(e.sum.day) / (e.sum.vol / Math.sqrt(252)), x = v => Math.abs(v).toFixed(1) + 'x';
   const turned = k => has.filter(e => tz(e) && tz(e).fromType === k && tz(e).since <= 14).sort((a, b) => tz(a).since - tz(b).since);
   const C = [
-    ['Unusually low for them', has.filter(e => e.sum.vol > 0 && e.sum.ath < 0).sort((a, b) => a.sum.ath / a.sum.vol - b.sum.ath / b.sum.vol),
+    ['Unusually low for them', 'How far below its record, in units of its own normal yearly swing (volatility). 3.0x: the fall is three times what this market usually moves in a year, so it is deep even for a jumpy market. Big number: below the record.', has.filter(e => e.sum.vol > 0 && e.sum.ath < 0).sort((a, b) => a.sum.ath / a.sum.vol - b.sum.ath / b.sum.vol),
       e => pc(e.sum.ath, 0), e => `${x(e.sum.ath / e.sum.vol)} its normal yearly swing · vol ${(e.sum.vol * 100).toFixed(0)}%`, e => e.sum.ath / e.sum.vol],
-    ['At or near their 10-year worst', has.filter(e => e.sum.dd10 < 0 && e.sum.ath <= e.sum.dd10 * .9).sort((a, b) => a.sum.ath - b.sum.ath),
+    ['At or near their 10-year worst', 'Markets now within 10% of their deepest fall from the record in the last 10 years (or since listing). Big number: below the record today. Line: the deepest it got.', has.filter(e => e.sum.dd10 < 0 && e.sum.ath <= e.sum.dd10 * .9).sort((a, b) => a.sum.ath - b.sum.ath),
       e => pc(e.sum.ath, 0), e => `${e.sum.r10 == null ? 'Deepest since listing' : '10-year deepest'} ${pc(e.sum.dd10, 0)}`, e => e.sum.ath],
-    ['Running hot near the record', has.filter(e => e.sum.ath >= -.05 && e.sum.r1 != null && e.sum.vol > 0).sort((a, b) => b.sum.r1 / b.sum.vol - a.sum.r1 / a.sum.vol),
+    ['Running hot near the record', 'Within 5% of the record, with the biggest 1-year rise against their normal yearly swing. 1.8x: the rise over the year is 1.8 times a usual yearly swing. Big number: 1-year return.', has.filter(e => e.sum.ath >= -.05 && e.sum.r1 != null && e.sum.vol > 0).sort((a, b) => b.sum.r1 / b.sum.vol - a.sum.r1 / a.sum.vol),
       e => pc(e.sum.r1, 0), e => `1 year, ${x(e.sum.r1 / e.sum.vol)} its normal swing · ${pc(e.sum.ath)} from the record`, e => e.sum.r1 / e.sum.vol],
-    ['Unusual move on the day', has.filter(e => e.sum.vol > 0 && e.sum.day != null && e.sum.date === last).sort((a, b) => day(b) - day(a)),
+    ['Unusual move on the day', 'The move on the last close against a normal day for this market (yearly volatility divided by the square root of 252 trading days). 4.1x: about four times a usual daily move. Big number: the move on the day.', has.filter(e => e.sum.vol > 0 && e.sum.day != null && e.sum.date === last).sort((a, b) => day(b) - day(a)),
       e => pc(e.sum.day, 1), e => `${x(day(e))} a normal day`, e => Math.sign(e.sum.day) * day(e)],
-    ['Deep, but turning up', has.filter(e => e.sum.ath <= -.25 && tz(e) && tz(e).fromType === 'L').sort((a, b) => tz(b).move - tz(a).move),
+    ['Deep, but turning up', 'At least 25% below the record, but the latest swing is a rise from a low, at the reversal size its page opens with (8% indices, 15% the rest). Big number: rise since that low. Line: below the record and the trend.', has.filter(e => e.sum.ath <= -.25 && tz(e) && tz(e).fromType === 'L').sort((a, b) => tz(b).move - tz(a).move),
       e => pc(tz(e).move, 0), e => `${pc(e.sum.ath, 0)} from the record · ${tz(e).trend} at ${PAGE(e)}%`, e => tz(e).move],
-    ['Just turned down', turned('H'), e => pc(tz(e).move, 1), e => `from the high of ${dl(tz(e).from)} · ${len(tz(e).since)}`, e => tz(e).move, 1],
-    ['Just turned up', turned('L'), e => pc(tz(e).move, 1), e => `from the low of ${dl(tz(e).from)} · ${len(tz(e).since)}`, e => tz(e).move, 1],
+    ['Just turned down', 'The latest swing high came in the last 14 days and the price has fallen from it since, at the reversal size its page opens with (8% indices, 15% the rest). Big number: move since that high. Line: its date and how long ago.', turned('H'), e => pc(tz(e).move, 1), e => `from the high of ${dl(tz(e).from)} · ${len(tz(e).since)}`, e => tz(e).move, 1],
+    ['Just turned up', 'The latest swing low came in the last 14 days and the price has risen from it since, at the reversal size its page opens with (8% indices, 15% the rest). Big number: move since that low. Line: its date and how long ago.', turned('L'), e => pc(tz(e).move, 1), e => `from the low of ${dl(tz(e).from)} · ${len(tz(e).since)}`, e => tz(e).move, 1],
   ];
-  $('looks').innerHTML = C.map(([t, R, num, why, v, count]) => {
+  $('looks').innerHTML = C.map(([t, tip, R, num, why, v, count]) => {
     const top = R.slice(0, 5), m = Math.max(...top.map(e => Math.abs(v(e))), 1e-9);
-    return `<div class="lk"><h3>${t}${count ? `: ${R.length}` : ''}</h3>${top.length ? `<ol>${top.map(e => `<li><a href="${href(e)}">${esc(e.name)}</a><b>${num(e)}</b>` +
+    return `<div class="lk" title="${tip}"><h3>${t}${count ? `: ${R.length}` : ''} <span class="tipi" tabindex="0" role="img" aria-label="${tip}">&#9432;</span></h3>${top.length ? `<ol>${top.map(e => `<li><a href="${href(e)}">${esc(e.name)}</a><b>${num(e)}</b>` +
       `<span class="pb"><i class="${v(e) >= 0 ? 'u' : 'd'}" style="width:${(Math.abs(v(e)) / m * 100).toFixed(1)}%"></i></span><small>${why(e)}</small></li>`).join('')}</ol>` : '<p class="note">None today</p>'}</div>`;
   }).join('');
 }
