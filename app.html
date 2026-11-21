@@ -27,7 +27,7 @@ h1{font-size:36px;line-height:1.15;font-weight:700;letter-spacing:-.01em;max-wid
 .pick{font-weight:600}.pick select{font:600 15px system-ui,sans-serif;padding:8px 12px;margin-left:8px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--ink)}
 .pick select:focus-visible{outline:2px solid var(--rise);outline-offset:2px}
 .pick select{max-width:min(640px,100%)}.pick option{font-weight:400;color:var(--ink)}.pick option.off{color:#6B7280}.pick .f0{color:#15803D}.pick .f1{color:#B45309}.pick .f2{color:#B91C1C}
-.fresh{font:12px ui-monospace,Consolas,monospace;color:var(--muted)}.fresh b{font-weight:600}.fresh .f0{color:#15803D}.fresh .f1{color:#B45309}.fresh .f2{color:#B91C1C}
+.sp2{display:block;margin-top:6px}.fresh{font:12px ui-monospace,Consolas,monospace;color:var(--muted)}.fresh b{font-weight:600}.fresh .f0{color:#15803D}.fresh .f1{color:#B45309}.fresh .f2{color:#B91C1C}
 .home{font-weight:600;color:var(--rise)}.home:focus-visible{outline:2px solid var(--rise);outline-offset:2px}
 .pickrow{display:flex;align-items:center;gap:6px 12px;flex-wrap:wrap}
 .cmd{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:16px 0 4px}
@@ -509,7 +509,7 @@ const TIPS = {
   ath: 'How far today is below the highest close ever. A fall needs a bigger rise to undo it: down 20% needs up 25% to get back.',
   swing: 'The move since the last confirmed turning point. Falling: how far it has dropped from the last swing high. Rising: how far it is up from the last swing low.',
   shape: 'Compares the last two swing highs and the last two swing lows. Higher highs and higher lows: uptrend. Lower highs and lower lows: downtrend. Anything else: mixed. The answer depends on the reversal size: a small one sees the recent swings, a big one the large moves, so one market can be in an uptrend at 10% and a downtrend at 15%.',
-  speed: 'Calendar days from the record close to today\'s depth. Grey dots: the earlier falls that got this deep, placed by how long they took to get there. Orange: now.',
+  speed: 'Calendar days from the record close to today\'s depth, and the move since the latest swing high or low, each with its average pace a month. Grey dots: the earlier falls that got this deep, placed by how long they took to get there. Orange: now.',
   year: 'Each dot is one earlier fall that got as deep as today: how far it was up or down a year after it first got there. Blue: higher. Orange: lower.',
   range: 'Where today sits between the lowest close (0%) and the highest close (100%) of the last 5 years. Above 50% means closer to the top than the bottom.',
   chart: 'Grey: the daily close. On top, the big swings: blue lines are rises, orange lines are falls, dots are the turning points. A turn only counts once the price reverses by the size picked above, so small daily wiggles are ignored. Labels: the % move, the change in points and how long it took. Log scale: the same % move looks the same size anywhere on the chart. The strip below shows how far under the record close each day was: 0% is a new record; labels give the depth of each fall of 10% or more. The bars under the chart show every swing: width is how long it lasted, height how big it was.',
@@ -608,13 +608,20 @@ function render() {
   // 3 and 4 from the past falls this deep; without them, the current swing and the 5-year range
   const yrs = R ? S.scen[0].cases.filter(c => c.fwd[252] != null) : [];
   let t3, t4;
+  const recBefore = i => { while (i > 0 && D.pctAth[i] < 0) i--; return i; };
+  // Speed both ways: from the record, and from the latest turn (an unconfirmed one counts)
+  const cd = (a, b) => Math.round((new Date(dates[b]) - new Date(dates[a])) / 864e5);
+  const pace = (m, d) => d ? ` (${pc(m / Math.max(d, 1) * 30.44, 1)} a month)` : '';
+  const ri = recBefore(N - 1), rd = cd(ri, N - 1), tp = z.ext.i < N - 1 ? z.ext : lp, td = cd(tp.i, N - 1), tm = last / C[tp.i] - 1;
+  const both = `<span class="sp2">From the record: ${pc(ddNow)} in ${pl(rd, 'day')}${pace(ddNow, rd)}.<br>` +
+    `From the latest swing: ${pc(tm)} in ${pl(td, 'day')} since the ${dl(dates[tp.i])} ${tp.type === 'H' ? 'high' : 'low'}${pace(tm, td)}.</span>`;
   if (R) {
     const sMax = Math.ceil(Math.max(S.days, ...R.map(r => r.hitDays)) / 20) * 20, faster = R.filter(r => r.hitDays <= S.days).length;
-    t3 = tile(`Speed${tip('speed')}`, pl(S.days, 'day'), ink, `from the record to ${pc(ddNow, 0)}. ${faster} of ${pl(R.length, 'past fall')} this deep got here as fast or faster.`,
+    t3 = tile(`Speed${tip('speed')}`, pl(S.days, 'day'), ink, `from the record to ${pc(ddNow, 0)}. ${faster} of ${pl(R.length, 'past fall')} this deep got here as fast or faster. ${both}`,
       `<div class="mini"><i class="ln"></i>${R.map(r => dot(r.hitDays, sMax, '', `${mon(r.peak)} fall: ${pl(r.hitDays, 'day')}`)).join('')}${dot(S.days, sMax, ' now', `Now: ${pl(S.days, 'day')}`)}</div>`,
       ['0 days', 'orange: now', pl(sMax, 'day')]);
   } else
-    t3 = tile(`Current swing${tip('swing')}`, pc(last / C[lp.i] - 1), z.up ? rise : fink, swingNote);
+    t3 = tile(`Speed${tip('swing')}`, pc(tm), tm >= 0 ? rise : fink, both);
   if (yrs.length) {
     const v = yrs.map(c => c.fwd[252]), lo = Math.floor(Math.min(-.6, ...v) * 10) / 10, hi = Math.ceil(Math.max(1.2, ...v) * 10) / 10;
     const at = x => ((x - lo) / (hi - lo) * 100).toFixed(1) + '%';
@@ -673,7 +680,6 @@ function render() {
       (pp && pp.i < i ? `<br>${np ? (np.type === 'H' ? 'In a rise: ' : 'In a fall: ') : ''}${pc(C[i] / C[pp.i] - 1)} from ${dm(dates[pp.i])}` : ''));
   }
   // Hover on a turning point: the move from the turn before, how long it took, and where it stood against the record
-  const recBefore = i => { while (i > 0 && D.pctAth[i] < 0) i--; return i; };
   const turn = p => { const k = z.piv.indexOf(p), a = z.piv[k - 1], d = D.pctAth[p.i], r = recBefore(p.i);
     return `<b>${p.type === 'H' ? 'Swing high' : 'Swing low'}, ${dl(dates[p.i])}</b><br>${money(C[p.i])}` +
       (a ? `<br>${pc(C[p.i] / C[a.i] - 1)} from the ${dl(dates[a.i])} ${a.type === 'H' ? 'high' : 'low'}, in ${span(Math.round((new Date(dates[p.i]) - new Date(dates[a.i])) / 864e5))}` : '') +
