@@ -667,6 +667,12 @@ function render() {
     hov.push(`<b>${dl(dates[i])}</b><br>${money(C[i])}<br>${D.pctAth[i] >= 0 ? 'Record close' : pc(D.pctAth[i], 2) + ' below the record'}` +
       (pp && pp.i < i ? `<br>${np ? (np.type === 'H' ? 'In a rise: ' : 'In a fall: ') : ''}${pc(C[i] / C[pp.i] - 1)} from ${dm(dates[pp.i])}` : ''));
   }
+  // Hover on a turning point: the move from the turn before, how long it took, and where it stood against the record
+  const recBefore = i => { while (i > 0 && D.pctAth[i] < 0) i--; return i; };
+  const turn = p => { const k = z.piv.indexOf(p), a = z.piv[k - 1], d = D.pctAth[p.i], r = recBefore(p.i);
+    return `<b>${p.type === 'H' ? 'Swing high' : 'Swing low'}, ${dl(dates[p.i])}</b><br>${money(C[p.i])}` +
+      (a ? `<br>${pc(C[p.i] / C[a.i] - 1)} from the ${dl(dates[a.i])} ${a.type === 'H' ? 'high' : 'low'}, in ${span(Math.round((new Date(dates[p.i]) - new Date(dates[a.i])) / 864e5))}` : '') +
+      (d >= 0 ? '<br>A record close' : `<br>${pc(d)} from the record of ${dl(dates[r])}, ${span(Math.round((new Date(dates[p.i]) - new Date(dates[r])) / 864e5))} after it`); };
   const provX = [dates[Math.max(pv.a.i, s0)], dates[pv.b.i]], provY = [C[Math.max(pv.a.i, s0)], C[pv.b.i]];
   if (z.ext.i < N - 1) { provX.push(dates[N - 1]); provY.push(last); }
   const traces = [
@@ -675,7 +681,7 @@ function render() {
     {x: r.X, y: r.Y, mode: 'lines', line: {color: riseC, width: 2.4}, hoverinfo: 'skip'},
     {x: f.X, y: f.Y, mode: 'lines', line: {color: fallC, width: 2.4}, hoverinfo: 'skip'},
     {x: provX, y: provY, mode: 'lines', line: {color: muted, width: 1.6, dash: 'dash'}, hoverinfo: 'skip'},
-    {x: dots.map(p => dates[p.i]), y: dots.map(p => C[p.i]), mode: 'markers', hoverinfo: 'skip', cliponaxis: false,
+    {x: dots.map(p => dates[p.i]), y: dots.map(p => C[p.i]), mode: 'markers', customdata: dots.map(turn), hovertemplate: '%{customdata}<extra></extra>', cliponaxis: false,
      marker: {size: dots.map(p => p.tag === 'ATH' ? 10 : 8.4), color: dots.map(p => p.tag === 'ATH' ? css('--gold') : p.type === 'H' ? riseC : fallC), line: {color: '#fff', width: 1.5}}},
   ];
   // Below the record, each day, on the same dates as the price
