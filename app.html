@@ -28,6 +28,7 @@ h1{font-size:36px;line-height:1.15;font-weight:700;letter-spacing:-.01em;max-wid
 .pick select:focus-visible{outline:2px solid var(--rise);outline-offset:2px}
 .pick select{max-width:min(640px,100%)}.pick option{font-weight:400;color:var(--ink)}.pick option.off{color:#6B7280}.pick .f0{color:#15803D}.pick .f1{color:#B45309}.pick .f2{color:#B91C1C}
 .fresh{font:12px ui-monospace,Consolas,monospace;color:var(--muted)}.fresh b{font-weight:600}.fresh .f0{color:#15803D}.fresh .f1{color:#B45309}.fresh .f2{color:#B91C1C}
+.home{font-weight:600;color:var(--rise)}.home:focus-visible{outline:2px solid var(--rise);outline-offset:2px}
 .pickrow{display:flex;align-items:center;gap:6px 12px;flex-wrap:wrap}
 .cmd{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:16px 0 4px}
 .cmd code{font:14px var(--mono);background:var(--ground);border:1px solid var(--line);border-radius:8px;padding:9px 12px;user-select:all}
@@ -86,6 +87,7 @@ td.r,th.r{text-align:right}
 .cap{font-size:13px;font-weight:600;color:var(--ink2)}
 .trio{display:flex;flex-wrap:wrap;gap:16px;align-items:stretch}
 .in{flex:1 1 300px;min-width:0;border:1px solid var(--line);border-radius:10px;padding:14px;display:flex;flex-direction:column;gap:10px}
+.bfall{margin:6px 0;padding-left:18px;font-size:14px;line-height:1.6}.bfall b{color:var(--fall-ink)}
 .in.wide{flex-basis:360px}.in h3{margin:0;font-size:15px;font-weight:700}.fn{margin:0;font-size:12px;color:var(--muted)}
 .turns{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
 .turn{border-radius:8px;padding:8px;display:flex;flex-direction:column;gap:2px;font-size:11px;color:var(--ink2);background:var(--line2);border:1px solid transparent}
@@ -198,6 +200,7 @@ i.sw{display:inline-block;width:12px;height:12px;border-radius:2px;flex:none}
     <div class="headrow">
       <div class="kicker up" id="asof"></div>
       <div class="pickrow">
+        <a class="home" href="index.html">&#8592; All markets</a>
         <label class="pick">Index, stock or commodity <select id="switch"></select></label> <button type="button" class="act" id="open">Open</button>
         <span class="fresh"><b class="f0">&#9679; up to date</b> · <b class="f1">&#9670; up to a week old</b> · <b class="f2">&#9650; older</b> · &#8212; not built</span>
         <span id="rebuildBox" hidden><button type="button" class="linkbtn" id="rebuild">Rebuild</button> <span class="stat" id="rebuildStat" role="status"></span></span>
@@ -236,6 +239,8 @@ i.sw{display:inline-block;width:12px;height:12px;border-radius:2px;flex:none}
       <div class="cap">Every swing as a bar: width is how long it lasted, height is how big the move was</div>
       <div id="swingBars" role="img" style="height:190px"></div>
     </div>
+    <div class="in"><h3>The biggest falls in view, and how long they took</h3><ul class="bfall" id="bigFalls"></ul>
+      <p class="fn">A fall label on the chart is measured from the swing high just before it, not from the record. Here both are given.</p></div>
     <div class="trio">
       <div class="in wide"><h3 data-k="turns">The last eight turns</h3><div class="turns" id="turns"></div>
         <p class="fn">HH higher high · LH lower high · HL higher low · LL lower low · ATH record. Oldest on the left; dashed = not confirmed.</p></div>
@@ -503,7 +508,7 @@ const TIPS = {
   close: 'The latest closing price and how much it moved against the day before. During US market hours it is the live price.',
   ath: 'How far today is below the highest close ever. A fall needs a bigger rise to undo it: down 20% needs up 25% to get back.',
   swing: 'The move since the last confirmed turning point. Falling: how far it has dropped from the last swing high. Rising: how far it is up from the last swing low.',
-  shape: 'Compares the last two swing highs and the last two swing lows. Higher highs and higher lows: uptrend. Lower highs and lower lows: downtrend. Anything else: mixed.',
+  shape: 'Compares the last two swing highs and the last two swing lows. Higher highs and higher lows: uptrend. Lower highs and lower lows: downtrend. Anything else: mixed. The answer depends on the reversal size: a small one sees the recent swings, a big one the large moves, so one market can be in an uptrend at 10% and a downtrend at 15%.',
   speed: 'Calendar days from the record close to today\'s depth. Grey dots: the earlier falls that got this deep, placed by how long they took to get there. Orange: now.',
   year: 'Each dot is one earlier fall that got as deep as today: how far it was up or down a year after it first got there. Blue: higher. Orange: lower.',
   range: 'Where today sits between the lowest close (0%) and the highest close (100%) of the last 5 years. Above 50% means closer to the top than the bottom.',
@@ -596,7 +601,7 @@ function render() {
   const ls = z.piv.filter(p => p.type === 'L').at(-1);
   const swingNote = `${z.up ? 'Rising' : 'Falling'} ${pc(last / C[lp.i] - 1)} from the ${dl(dates[lp.i])} ${lp.type === 'H' ? 'high' : 'low'}` +
     (z.ext.i < N - 1 ? `; ${pc(last / C[z.ext.i] - 1)} since the ${dl(dates[z.ext.i])} ${z.ext.type === 'H' ? 'high' : 'low'}, not confirmed yet` : '');
-  const t5 = tile(`Trend shape${tip('shape', 1)}`, shape, shape === 'Uptrend' ? rise : shape === 'Downtrend' ? fink : ink,
+  const t5 = tile(`Trend shape at ${Math.round(size * 100)}% reversals${tip('shape', 1)}`, shape, shape === 'Uptrend' ? rise : shape === 'Downtrend' ? fink : ink,
     `Last high ${tagsH.at(-1) || '–'}, last low ${tagsL.at(-1) || '–'}${ls && last < C[ls.i] ? `; now below that low (${money(C[ls.i])})` : ''}. ${swingNote}.` +
     `<span class="tags">${all.slice(-8).map(p => `<span class="tag ${p.tag === 'ATH' ? 'ATH' : p.type}${p.prov ? ' prov' : ''}">${p.prov ? (p.type === 'H' ? 'high?' : 'low?') : p.tag || p.type}</span>`).join('')}</span>`,
     '', ['older', 'newest']);
@@ -722,6 +727,12 @@ function render() {
 
   // Swing table, newest first
   $('swingCount').textContent = swings.length;
+  // The current move, then the 5 biggest falls in view: from the swing high, and from the record
+  const days = (a, b) => Math.round((new Date(dates[b]) - new Date(dates[a])) / 864e5);
+  const bf = [...new Set([swings.at(-1), ...swings.filter(w => w.move < 0).sort((p, q) => p.move - q.move).slice(0, 5)])].filter(w => w.move < 0);
+  $('bigFalls').innerHTML = bf.map(w => { const d = D.pctAth[w.b.i], r = recBefore(w.b.i);
+    return `<li><b>${pc(w.move)}${w.b.prov ? ' so far' : ''}</b> from the ${dl(dates[w.a.i])} high to ${w.b.prov ? 'the last close' : 'the low'} of ${dl(dates[w.b.i])}, in ${span(days(w.a.i, w.b.i))}` +
+      (r === w.a.i ? ' (that high was the record)' : `; ${pc(d)} below the record of ${dl(dates[r])}, ${span(days(r, w.b.i))} after it`) + '</li>'; }).join('') || '<li>No falls in view at this size.</li>';
   $('swings').innerHTML = '<tr><th>Swing</th><th>From</th><th>To</th><th class="r">Move</th><th class="r">Points</th><th class="r">Took</th><th class="r">Ends at</th><th>Tag</th></tr>' +
     swings.slice().reverse().map(w => { const c = w.move > 0 ? 'ri' : 'fi'; return `<tr><td class="k ${c}">${w.move > 0 ? 'Rise' : 'Fall'}${w.b.prov ? ' (so far)' : ''}</td><td>${dl(dates[w.a.i])}</td><td>${dl(dates[w.b.i])}</td>
       <td class="r num ${c}" style="font-weight:600">${pc(w.move)}</td><td class="r num">${(w.pts >= 0 ? '+' : '−') + big(Math.abs(w.pts))}</td><td class="r">${span(w.cal)}</td><td class="r num">${money(C[w.b.i])}</td>
