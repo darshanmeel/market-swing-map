@@ -627,6 +627,8 @@ function render() {
   const small = innerWidth < 600, H = small ? 440 : 620, span0 = N - s0;
   $('price').style.height = H + 'px'; $('swingBars').style.height = (small ? 140 : 190) + 'px';
   const x = dates.slice(s0), y = C.slice(s0), M = {l: 16, r: 56, t: 8, b: 30};
+  // Empty room after the last close so the labels on the latest swing are not cut off: 6% of the view, at least 2 weeks
+  const xEnd = (d => (d.setDate(d.getDate() + Math.max(14, Math.round((d - new Date(dates[s0])) / 864e5 * .06))), d.toISOString().slice(0, 10)))(new Date(dates[N - 1]));
   const seg = (want) => { const X = [], Y = []; for (const w of swings) if (!w.b.prov && (w.move > 0) === want) { X.push(dates[Math.max(w.a.i, s0)], dates[w.b.i], null); Y.push(C[Math.max(w.a.i, s0)], C[w.b.i], null); } return {X, Y}; };
   const r = seg(true), f = seg(false), pv = swings[swings.length - 1];
   const dots = z.piv.filter(p => p.i >= s0);
@@ -691,7 +693,7 @@ function render() {
   Plotly.react('price', traces, {margin: M, showlegend: false, paper_bgcolor: 'rgba(0,0,0,0)', plot_bgcolor: 'rgba(0,0,0,0)', font: mono,
     yaxis: {type: 'log', side: 'right', range: [l0, l1], gridcolor: '#EEF0F2', ...(yt.length > 2 ? {tickvals: yt, ticktext: yt.map(kfmt)} : {tickformat: '~s', nticks: 5}), domain: [.28, 1], fixedrange: true},
     yaxis2: {side: 'right', ticksuffix: '%', gridcolor: '#EEF0F2', domain: [0, .22], range: [ddLo, 0], nticks: 4, zeroline: false, fixedrange: true},
-    xaxis: {anchor: 'y2', range: [dates[s0], dates[N - 1]], tickvals: xt, ticktext: xl, gridcolor: '#F1F2F4', showspikes: true, spikemode: 'across', spikethickness: 1, spikedash: 'dot', spikecolor: css('--faint')},
+    xaxis: {anchor: 'y2', range: [dates[s0], xEnd], tickvals: xt, ticktext: xl, gridcolor: '#F1F2F4', showspikes: true, spikemode: 'across', spikethickness: 1, spikedash: 'dot', spikecolor: css('--faint')},
     annotations: [...notes, ...labels], hovermode: 'x', hoverlabel: hl}, {responsive: true, displayModeBar: false});
   $('chartTitle').textContent = `${years}-year view, log scale`;
   $('price').setAttribute('aria-label', `${D.name}, ${years}-year view, log scale: daily closes with the swings at ${Math.round(size * 100)}% reversals, and below it how far under the record close each day was`);
@@ -705,7 +707,7 @@ function render() {
     customdata: swings.map(w => `${w.move > 0 ? 'Rise' : 'Fall'} ${pc(w.move)}${w.b.prov ? ' so far' : ''}<br>${dl(dates[w.a.i])} to ${dl(dates[w.b.i])}, ${span(w.cal)}`),
     hovertemplate: '%{customdata}<extra></extra>'}],
     {margin: {l: M.l, r: M.r, t: 14, b: 14}, showlegend: false, paper_bgcolor: 'rgba(0,0,0,0)', plot_bgcolor: 'rgba(0,0,0,0)', font: mono, bargap: 0,
-     xaxis: {type: 'date', range: [dates[s0], dates[N - 1]], visible: false, fixedrange: true},
+     xaxis: {type: 'date', range: [dates[s0], xEnd], visible: false, fixedrange: true},
      yaxis: {side: 'right', dtick: bStep, ticksuffix: '%', gridcolor: '#F1F2F4', zerolinecolor: '#C9CDD3', fixedrange: true, range: [bLo, bHi]},
      annotations: swings.filter(w => top8.has(w)).map(w => ({x: mid(w)[0], y: w.move * 100, showarrow: false, yanchor: w.move > 0 ? 'bottom' : 'top',
        text: `<b>${pc(w.move, 0)}</b>`, font: {size: 11, color: w.move > 0 ? riseC : fallInk}})),
