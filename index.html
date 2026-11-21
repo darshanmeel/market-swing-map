@@ -1,0 +1,261 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Swing map: every market at a glance</title>
+<script src="plotly.min.js"></script>
+<style>
+:root{--ground:#F6F6F3;--card:#fff;--ink:#15181D;--ink2:#4A505C;--muted:#5A6170;--faint:#8A919C;--line:#E3E5E8;--line2:#EEF0F2;--chip:#D5D8DD;
+  --rise:#1F5BD8;--fall:#B84A0E;--fall-ink:#8F3A0B;--down:#B4232C;--up:#0F766E;--gold:#B08A1E;--gold-ink:#7A6418;--rise-bg:#EEF3FC;--fall-bg:#FBF3EE;
+  --mono:ui-monospace,Consolas,monospace}
+*{box-sizing:border-box}
+body{margin:0;background:var(--ground);color:var(--ink);font:14px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif}
+.num,table,.tile b{font-variant-numeric:tabular-nums}
+main{max-width:1280px;margin:0 auto;padding:32px 32px 64px;display:flex;flex-direction:column;gap:22px}
+header{display:flex;flex-direction:column;gap:10px}
+.kicker{font:12px var(--mono);color:var(--muted);text-transform:uppercase;letter-spacing:.08em}
+h1{font-size:34px;line-height:1.15;font-weight:700;letter-spacing:-.01em;margin:0;max-width:980px}
+h2{font-size:21px;font-weight:700;margin:0}
+.verdict{font-size:17px;line-height:1.55;color:#33383F;max-width:900px;margin:0}
+.note{font-size:13px;color:var(--ink2);margin:0;max-width:900px}
+a{color:var(--rise)}a:focus-visible,button:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid var(--rise);outline-offset:2px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:20px;display:flex;flex-direction:column;gap:14px;min-width:0}
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px}
+.tile{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:14px 16px;display:flex;flex-direction:column;gap:4px}
+.tile small{color:var(--muted);font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.06em}
+.tile b{font:600 26px/1.25 var(--mono)}.tile p{margin:0;color:var(--ink2);font-size:13px}
+.grp{display:grid;grid-template-columns:minmax(150px,220px) 70px minmax(0,1fr) 230px;gap:8px 14px;align-items:center;font-size:13px}
+.grp .hd{font-weight:600;color:var(--muted);font-size:12px}
+.bar{display:flex;height:18px;border-radius:4px;overflow:hidden;background:var(--line2)}.bar i{display:block;height:100%}
+.u{background:var(--rise)}.m{background:#B9BEC6}.d{background:var(--fall)}
+.key{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:12px;color:var(--ink2)}.key span{display:flex;align-items:center;gap:6px}.key i{width:12px;height:12px;border-radius:2px;display:inline-block}
+.seg{display:flex;flex-wrap:wrap;gap:6px}
+.seg button{font:13px system-ui,sans-serif;min-height:36px;padding:0 12px;border:1px solid var(--chip);background:var(--card);border-radius:6px;cursor:pointer;color:var(--ink)}
+.seg button[aria-pressed=true]{background:var(--ink);color:#fff;border-color:var(--ink)}
+.ctl{display:flex;flex-wrap:wrap;gap:10px 16px;align-items:center}
+.ctl label{font-weight:600;display:flex;align-items:center;gap:8px}
+select,input{font:14px system-ui,sans-serif;padding:7px 10px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--ink)}
+input{width:220px;max-width:100%}
+.scroll{overflow:auto;max-height:640px;border:1px solid var(--line);border-radius:8px}
+table{border-collapse:collapse;width:100%;font-size:13px}
+th{text-align:left;color:var(--muted);font-weight:600;border-bottom:1px solid var(--line);padding:8px;position:sticky;top:0;background:var(--card);z-index:1;vertical-align:bottom}
+th:has(button){padding:0}th button{all:unset;display:block;padding:8px;cursor:pointer;white-space:normal;min-width:56px}
+th button:focus-visible{outline:2px solid var(--rise);outline-offset:-2px}
+th[aria-sort] button::after{content:" \2195";color:var(--faint)}th[aria-sort=ascending] button::after{content:" \2191";color:var(--ink)}th[aria-sort=descending] button::after{content:" \2193";color:var(--ink)}
+td{border-bottom:1px solid var(--line2);padding:6px 8px;white-space:nowrap;vertical-align:top}
+td.r,th.r,th.r button{text-align:right}
+td:first-child,th:first-child{position:sticky;left:0;background:var(--card)}th:first-child{z-index:2}
+td small{display:block;color:var(--muted);font-size:12px}
+.pos{color:var(--up)}.neg{color:var(--down)}
+.t{display:inline-block;font:600 12px var(--mono);padding:1px 6px;border-radius:4px;margin:1px 0}
+.t.Uptrend{background:var(--rise-bg);color:var(--rise)}.t.Downtrend{background:var(--fall-bg);color:var(--fall-ink)}.t.Mixed{background:var(--line2);color:var(--ink2)}
+.f0{color:#15803D}.f1{color:#B45309}.f2{color:#B91C1C}.off{color:var(--faint)}
+.fresh{font:12px var(--mono);color:var(--muted)}
+#scatter{height:460px}#idxChart{height:420px}
+.two{display:flex;flex-direction:column;gap:16px}
+.foot{color:var(--muted);font-size:12px;max-width:900px;margin:0}
+@media (max-width:900px){.grp{grid-template-columns:1fr 50px;}.grp .bar,.grp .txt{grid-column:1/-1}.grp .hd:nth-child(n+3){display:none}}
+@media (max-width:600px){main{padding:20px 14px 48px}h1{font-size:26px}.verdict{font-size:16px}.card{padding:14px}#scatter{height:360px}.tile b{font-size:22px}}
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <div class="kicker" id="asof">Swing map</div>
+    <h1 id="title">Every market at a glance</h1>
+    <p class="verdict" id="verdict"></p>
+    <p class="note"><b>History, not a forecast or advice.</b> These screens only sort markets by what their prices did; open a market for its swings, past falls and what came next. <a href="readme.html#home">How this page works</a></p>
+  </header>
+
+  <section class="tiles" id="tiles" aria-label="Headline counts"></section>
+
+  <section class="card" aria-labelledby="trendH">
+    <h2 id="trendH">Trend by group, at its reversal size</h2>
+    <p class="note">A turn counts only once the price moves back by the reversal size. A small size sees the recent swings, a big one the large moves, so one market can read <i>Uptrend</i> at 10% and <i>Downtrend</i> at 15%: both are right at their scale. Indices are read at 8%, commodities and crypto at 10%, companies at 10% and 15%.</p>
+    <div class="key"><span><i class="u"></i>Uptrend: higher high and higher low</span><span><i class="m"></i>Mixed</span><span><i class="d"></i>Downtrend: lower high and lower low</span></div>
+    <div class="grp" id="groups"></div>
+  </section>
+
+  <section class="card" aria-labelledby="mapH">
+    <h2 id="mapH">Below the record against the 5-year return</h2>
+    <p class="note">Each dot is one market in the table below (filters and screens apply). Right: close to its record; up: strong 5 years. Colour and shape give the trend at the market's first reversal size. Click a dot to open the market.</p>
+    <div id="scatter" role="img" aria-label="Scatter of every market in the table: percent below the record close against the 5-year return per year, by trend"></div>
+  </section>
+
+  <section class="card" aria-labelledby="listH">
+    <h2 id="listH">Screens and the full list</h2>
+    <div class="seg" id="screens" role="group" aria-label="Screens"></div>
+    <p class="note" id="screenNote"></p>
+    <div class="ctl">
+      <label>Group <select id="group"><option value="">All groups</option></select></label>
+      <label>Search <input id="q" type="search" placeholder="Name or ticker" autocomplete="off"></label>
+      <span class="fresh"><b class="f0">&#9679; up to date</b> · <b class="f1">&#9670; up to a week old</b> · <b class="f2">&#9650; older</b> · &#8212; not built</span>
+    </div>
+    <p class="note" id="count" role="status"></p>
+    <div class="scroll"><table id="list"></table></div>
+  </section>
+
+  <section class="card" aria-labelledby="idxH">
+    <h2 id="idxH">Indices at 8% reversals: 5 and 10 years</h2>
+    <p class="note">Return per year and the deepest close below the record, over the last 5 and the last 10 years.</p>
+    <div class="two">
+      <div id="idxChart" role="img" aria-label="Return per year over 5 and 10 years for each index"></div>
+      <div class="scroll"><table id="idx"></table></div>
+    </div>
+  </section>
+
+  <p class="foot">Built by <code>market_highs.py</code> from Yahoo Finance daily closes. Returns are price only, without dividends; 5- and 10-year returns are per year. Volatility: the spread of daily moves over the last year, as a yearly figure. "Past 10%+ falls deeper": of the falls of 10% or more from a record in the last 10 years, how many went deeper than today. "Higher a year later": of the past falls that got as deep as today, how many were higher a year after they got there.</p>
+</main>
+<script>
+const $ = id => document.getElementById(id);
+const MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+const dl = s => `${+s.slice(8, 10)} ${MON[+s.slice(5, 7) - 1]} ${s.slice(0, 4)}`;
+const esc = s => String(s).replace(/[&<>"]/g, c => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;'})[c]);
+const pc = (x, d = 1) => x == null ? '–' : (x >= 0 ? '+' : '−') + Math.abs(x * 100).toFixed(d) + '%';
+const sg = (x, d) => `<span class="${x == null ? '' : x >= 0 ? 'pos' : 'neg'}">${pc(x, d)}</span>`;
+const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+// Same as app.html: weekdays since the last close; 0 up to date, 1 up to a week, 2 older
+const MARK = ['●', '◆', '▲'];
+function fresh(date) {
+  let n = 0;
+  for (const d = new Date(date + 'T12:00:00'), t = new Date(); d.setDate(d.getDate() + 1) && d <= t;) if (d.getDay() % 6) n++;
+  return n <= 1 ? 0 : n <= 5 ? 1 : 2;
+}
+// The reversal sizes each group is read at; the first one colours the scatter
+const SIZES = {'Indices': [8], 'Commodities and crypto': [10]}, sizes = e => SIZES[e.group] || [10, 15];
+const SHORT = {Uptrend: 'Up', Downtrend: 'Down', Mixed: 'Mixed'};
+const trendAt = (e, t) => e.sum && e.sum.tr[t] ? e.sum.tr[t].trend : null;
+const every = (e, w) => sizes(e).every(t => trendAt(e, t) === w);
+const near = e => e.sum && e.sum.ath >= -.05, deep = e => e.sum && e.sum.ath <= -.2;
+const deepBack = e => deep(e) && e.sum.yrN >= 3 && e.sum.yrUp * 2 > e.sum.yrN;
+const SCREENS = [
+  ['All', () => true, ''],
+  ['Uptrend at both sizes', e => every(e, 'Uptrend'), 'Uptrend at 10% and at 15% (indices at 8%, commodities and crypto at 10%).'],
+  ['Near the record (within 5%)', near, 'The last close is at most 5% below the highest close ever.'],
+  ['Deep fall (20%+), past falls this deep mostly higher a year later', deepBack, 'At least 20% below the record, and of at least 3 past falls that got this deep, more than half were higher a year after.'],
+  ['Downtrend at both sizes', e => every(e, 'Downtrend'), 'Downtrend at 10% and at 15% (indices at 8%, commodities and crypto at 10%).'],
+];
+
+function trendCell(e) {
+  if (!e.sum) return '–';
+  return sizes(e).map(t => {
+    const z = e.sum.tr[t];
+    if (!z) return `<span class="t">${t}%: –</span>`;
+    const how = `${z.rising ? 'rising' : 'falling'} ${pc(z.move, 0)} since the ${dl(z.from)} ${z.fromType === 'H' ? 'high' : 'low'}`;
+    return `<span class="t ${z.trend}" title="At ${t}% reversals: last high ${z.high || '–'}, last low ${z.low || '–'}${z.belowLow ? ', now below that low' : ''}; ${how}">${t}%: ${SHORT[z.trend]}</span><small>${how}</small>`;
+  }).join('');
+}
+const score = e => e.sum ? sizes(e).reduce((s, t) => s + ({Uptrend: 1, Mixed: 0, Downtrend: -1}[trendAt(e, t)] ?? 0), 0) / sizes(e).length : null;
+const S = e => e.sum || {};
+const COLS = [
+  {k: 'Market', v: e => e.name, c: e => {
+    const f = e.built && e.date ? fresh(e.date) : null;
+    return `<span class="${f === null ? 'off' : 'f' + f}" title="${f === null ? 'Not built yet' : 'Last close ' + dl(e.date)}">${f === null ? '—' : MARK[f]}</span> <a href="app.html?m=${encodeURIComponent(e.slug)}">${esc(e.name)}</a><small>${esc(e.symbol)} · ${esc(e.group)}</small>`; }},
+  {k: 'Trend', v: score, c: trendCell},
+  {k: 'Below the record', r: 1, v: e => S(e).ath, c: e => e.sum ? `${pc(Math.min(e.sum.ath, 0))}<small>${e.sum.ath >= 0 ? 'record close' : dl(e.sum.athDate)}</small>` : '–'},
+  {k: 'Days since record', r: 1, v: e => S(e).athDays, c: e => e.sum ? e.sum.athDays.toLocaleString('en-US') : '–'},
+  {k: 'Last close', r: 1, v: e => S(e).close, c: e => e.sum ? `${e.sum.close.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}<small>${sg(e.sum.day, 2)} on the day</small>` : '–'},
+  {k: '1 year', r: 1, v: e => S(e).r1, c: e => sg(S(e).r1)},
+  {k: '5 years, per year', r: 1, v: e => S(e).r5, c: e => sg(S(e).r5)},
+  {k: '10 years, per year', r: 1, v: e => S(e).r10, c: e => sg(S(e).r10)},
+  {k: 'Deepest below record, 5y', r: 1, v: e => S(e).dd5, c: e => pc(S(e).dd5, 0)},
+  {k: 'Deepest below record, 10y', r: 1, v: e => S(e).dd10, c: e => pc(S(e).dd10, 0)},
+  {k: 'Volatility, 1 year', r: 1, v: e => S(e).vol, c: e => e.sum ? (e.sum.vol * 100).toFixed(0) + '%' : '–'},
+  {k: 'Past 10%+ falls deeper', r: 1, v: e => e.sum && e.sum.falls ? e.sum.deeper / e.sum.falls : null, c: e => e.sum ? `${e.sum.deeper} of ${e.sum.falls}` : '–'},
+  {k: 'Higher a year later', r: 1, v: e => e.sum && e.sum.yrN ? e.sum.yrUp / e.sum.yrN : null, c: e => e.sum && e.sum.yrN ? `${e.sum.yrUp} of ${e.sum.yrN}` : '–'},
+];
+let L = [], screen = 0, sortBy = 2, dir = -1;  // nearest the record first
+
+function rows() {
+  const g = $('group').value, q = $('q').value.trim().toLowerCase(), col = COLS[sortBy];
+  return L.filter(e => (!g || e.group === g) && (!q || e.name.toLowerCase().includes(q) || e.symbol.toLowerCase().includes(q)) && SCREENS[screen][1](e))
+    .sort((a, b) => { const x = col.v(a), y = col.v(b); return x == null ? 1 : y == null ? -1 : (x < y ? -1 : x > y ? 1 : 0) * dir; });
+}
+function table() {
+  const R = rows();
+  $('list').innerHTML = `<thead><tr>${COLS.map((c, i) => `<th${c.r ? ' class="r"' : ''} aria-sort="${i === sortBy ? (dir > 0 ? 'ascending' : 'descending') : 'none'}"><button type="button" data-i="${i}">${c.k}</button></th>`).join('')}</tr></thead>` +
+    `<tbody>${R.map(e => `<tr>${COLS.map(c => `<td${c.r ? ' class="r num"' : ''}>${c.c(e)}</td>`).join('')}</tr>`).join('')}</tbody>`;
+  $('count').textContent = `Showing ${R.length} of ${L.length} markets.`;
+  [...$('screens').children].forEach((b, i) => b.setAttribute('aria-pressed', i === screen));
+  $('screenNote').textContent = SCREENS[screen][2];
+  scatter(R);
+}
+function scatter(R) {
+  const P = R.filter(e => e.sum && e.sum.r5 != null), first = e => trendAt(e, sizes(e)[0]);
+  const T = [['Uptrend', css('--rise'), 'circle'], ['Mixed', '#8A919C', 'square'], ['Downtrend', css('--fall'), 'triangle-down']].map(([w, color, symbol]) => {
+    const Q = P.filter(e => first(e) === w);
+    return {name: w, type: 'scatter', mode: 'markers', x: Q.map(e => Math.min(e.sum.ath, 0) * 100), y: Q.map(e => e.sum.r5 * 100), customdata: Q.map(e => e.slug),
+      text: Q.map(e => `<b>${esc(e.name)}</b> (${esc(e.symbol)})<br>${pc(Math.min(e.sum.ath, 0))} below the record<br>${pc(e.sum.r5)} a year over 5 years<br>${w} at ${sizes(e)[0]}%`),
+      hovertemplate: '%{text}<extra></extra>', marker: {color, symbol, size: 8, opacity: .8, line: {color: '#fff', width: .6}}};
+  });
+  Plotly.react('scatter', T, {margin: {l: 56, r: 12, t: 10, b: 44}, paper_bgcolor: 'rgba(0,0,0,0)', plot_bgcolor: 'rgba(0,0,0,0)',
+    font: {family: 'system-ui,sans-serif', size: 12, color: css('--muted')}, legend: {orientation: 'h', y: 1.08},
+    xaxis: {title: {text: 'Below the record close (%)'}, ticksuffix: '%', gridcolor: css('--line2'), zerolinecolor: '#C9CDD3'},
+    yaxis: {title: {text: '5-year return per year (%)'}, ticksuffix: '%', gridcolor: css('--line2'), zerolinecolor: '#C9CDD3'},
+    hoverlabel: {bgcolor: '#15181D', font: {color: '#fff'}}}, {responsive: true, displayModeBar: false});
+}
+function tiles() {
+  const has = L.filter(e => e.sum), n = has.length, up = has.filter(e => every(e, 'Uptrend')).length, dn = has.filter(e => every(e, 'Downtrend')).length;
+  const tile = (label, value, note) => `<div class="tile"><small>${label}</small><b>${value}</b><p>${note}</p></div>`;
+  $('tiles').innerHTML =
+    tile('Markets', n, `with numbers, of ${L.length} in the list${L.length - n ? `; ${L.length - n} without numbers yet` : ''}`) +
+    tile('Uptrend at both sizes', up, `${dn} in a downtrend at both; ${n - up - dn} mixed or split between sizes`) +
+    tile('At or near the record', has.filter(near).length, `within 5% of the highest close ever; ${has.filter(e => e.sum.ath >= 0).length} closed at a record`) +
+    tile('In a fall of 20%+', has.filter(deep).length, `${has.filter(e => e.sum.ath <= -.5).length} of them 50% or more below the record`) +
+    tile('Deep fall, mostly higher before', has.filter(deepBack).length, 'past falls this deep were more often higher a year later than lower');
+}
+function groups() {
+  const out = ['<span class="hd">Group, size</span><span class="hd">Markets</span><span class="hd">Trend</span><span class="hd">Up · Mixed · Down</span>'];
+  for (const g of new Set(L.map(e => e.group))) {
+    const G = L.filter(e => e.group === g);
+    for (const t of sizes(G[0])) {
+      const c = w => G.filter(e => trendAt(e, t) === w).length, u = c('Uptrend'), m = c('Mixed'), d = c('Downtrend'), none = G.length - u - m - d;
+      const w = x => (x / G.length * 100).toFixed(2) + '%';
+      out.push(`<span><b>${esc(g)}</b> at ${t}%</span><span class="num">${G.length}</span><div class="bar" role="img" aria-label="${u} up, ${m} mixed, ${d} down"><i class="u" style="width:${w(u)}"></i><i class="m" style="width:${w(m)}"></i><i class="d" style="width:${w(d)}"></i></div>` +
+        `<span class="txt num">${u} up · ${m} mixed · ${d} down${none ? ` · ${none} no data` : ''}</span>`);
+    }
+  }
+  $('groups').innerHTML = out.join('');
+}
+function indices() {
+  const I = L.filter(e => e.group === 'Indices' && e.sum);
+  $('idx').innerHTML = '<thead><tr><th>Index</th><th>Trend at 8%</th><th class="r">5y, per year</th><th class="r">10y, per year</th><th class="r">Deepest, 5y</th><th class="r">Deepest, 10y</th></tr></thead><tbody>' +
+    I.map(e => `<tr><td><a href="app.html?m=${encodeURIComponent(e.slug)}">${esc(e.name)}</a><small>${pc(Math.min(e.sum.ath, 0))} below the record</small></td><td>${trendCell(e)}</td>` +
+      `<td class="r num">${sg(e.sum.r5)}</td><td class="r num">${sg(e.sum.r10)}</td><td class="r num">${pc(e.sum.dd5, 0)}</td><td class="r num">${pc(e.sum.dd10, 0)}</td></tr>`).join('') + '</tbody>';
+  const y = I.map(e => e.name);
+  Plotly.react('idxChart', [['5 years', 'r5', '#8DB0F0'], ['10 years', 'r10', css('--rise')]].map(([name, k, color]) =>
+    ({type: 'bar', orientation: 'h', name, y, x: I.map(e => e.sum[k] == null ? null : e.sum[k] * 100), marker: {color}, hovertemplate: `%{y}: %{x:.1f}% a year over ${name}<extra></extra>`})),
+    {barmode: 'group', margin: {l: 140, r: 12, t: 30, b: 36}, paper_bgcolor: 'rgba(0,0,0,0)', plot_bgcolor: 'rgba(0,0,0,0)', legend: {orientation: 'h', y: 1.06},
+     font: {family: 'system-ui,sans-serif', size: 12, color: css('--muted')}, xaxis: {ticksuffix: '%', gridcolor: css('--line2'), zerolinecolor: '#C9CDD3'},
+     yaxis: {autorange: 'reversed', automargin: true}, hoverlabel: {bgcolor: '#15181D', font: {color: '#fff'}}}, {responsive: true, displayModeBar: false});
+}
+
+function start() {
+  L = window.INDEX || [];
+  if (!L.some(e => e.sum)) {
+    $('verdict').innerHTML = 'Nothing to show yet. In this folder run <code>python market_highs.py</code> (every market) or <code>python market_highs.py --summary-only</code> (only these numbers, from closes already downloaded), then reload.';
+    return;
+  }
+  const last = L.map(e => e.sum && e.sum.date).filter(Boolean).sort().at(-1);
+  $('asof').textContent = `Swing map · closes up to ${dl(last)}`;
+  $('title').textContent = `${L.filter(e => e.sum).length} markets at a glance`;
+  $('verdict').textContent = 'Which markets are in an uptrend, which sit near their record, and which are deep in a fall that past falls recovered from. A starting list for a closer look on each market\'s own page.';
+  for (const g of new Set(L.map(e => e.group))) $('group').append(new Option(g, g));
+  $('screens').innerHTML = SCREENS.map(([t], i) => `<button type="button" data-i="${i}">${t}</button>`).join('');
+  $('screens').onclick = e => { const b = e.target.closest('button'); if (b) { screen = +b.dataset.i; table(); } };
+  $('list').onclick = e => {
+    const b = e.target.closest('th button'); if (!b) return;
+    const i = +b.dataset.i; dir = i === sortBy ? -dir : COLS[i].r ? -1 : 1; sortBy = i; table();
+    $('list').querySelector(`th button[data-i="${i}"]`).focus();
+  };
+  $('group').onchange = table; $('q').oninput = table;
+  tiles(); groups(); table(); indices();
+  $('scatter').on('plotly_click', ev => { const p = ev.points[0]; if (p) location.href = 'app.html?m=' + encodeURIComponent(p.customdata); });
+}
+const s = document.createElement('script');
+s.src = 'data/index.js'; s.onload = start; s.onerror = start;
+document.head.append(s);
+</script>
+</body>
+</html>

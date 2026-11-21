@@ -3,12 +3,14 @@
 Usage: python market_highs.py [TICKER ...]   (Yahoo symbols, default: every market in markets.csv)
        python market_highs.py --add SYMBOL "Name" [--group GROUP]   (adds it to markets.csv, group "Companies"
        unless given, then builds it; a symbol Yahoo has no data for is not added)
+       python market_highs.py --summary-only   (only the home page numbers, from the stored closes: no download)
        python market_highs.py --serve [PORT]   (serves this folder on http://127.0.0.1:PORT, default 8765, so app.html
        can build a market with its "Build now" button)
 Markets build in parallel, one process per CPU core; a failed market is printed and makes the exit code non-zero.
 Writes each market's data to data/<slug>.js, shown offline by the one page app.html?m=<slug>, plus highs_<slug>.html,
 a redirect to it for old links; today's numbers to market_highs.csv, and the day's guess to predictions/<slug>.json
-(older guesses kept and scored). data/index.js lists every market for the page's menu, with the last close of each built one.
+(older guesses kept and scored). data/index.js lists every market for the page's menu, with the last close of each built one, and the numbers
+the home page index.html shows.
 Closes are kept in data/closes.csv, so a run only downloads the latest days.
 """
 import csv
@@ -65,6 +67,7 @@ PICK = 8  # scenarios per guess: the past falls that reached today's depth at th
 HORIZON = 252  # trading days (about a year) each guess looks ahead
 SHOW_GUESSES = 60  # newest guesses carried into the page; the file keeps all
 BT_STEP = 5  # back-test paths kept every 5th trading day, to keep the page small
+TREND_SIZES = (8, 10, 15)  # reversal sizes (%) the home page reads the trend at: indices 8, the others 10 and 15
 
 
 def fetch(tickers, **when):
@@ -381,8 +384,82 @@ def page_data(t, d, eps, pages, name):
     }
 
 
+def trend(c, prev_max, t):
+    """The Trend shape tile of app.html at reversal size t, with the same rules: the running extreme becomes a turning
+    point once the price reverses by t; the last swing high and low are tagged against the one before."""
+    up, hi, lo, piv = True, 0, 0, []
+    for i in range(1, len(c)):
+        if up:
+            if c[i] > c[hi]:
+                hi = i
+            elif c[i] <= c[hi] * (1 - t):
+                piv.append((hi, "H"))
+                up, lo = False, i
+        elif c[i] < c[lo]:
+            lo = i
+        elif c[i] >= c[lo] * (1 + t):
+            piv.append((lo, "L"))
+            up, hi = True, i
+    if not piv:
+        return None
+    last, tags = {"H": None, "L": None}, {"H": [], "L": []}
+    for i, k in piv:
+        p = last[k]
+        if k == "H":
+            tag = "ATH" if c[i] > prev_max[i] else "" if p is None else "HH" if c[i] > c[p] else "LH"
+        else:
+            tag = "" if p is None else "HL" if c[i] > c[p] else "LL"
+        last[k] = i
+        if tag:
+            tags[k].append(tag)
+    h, l = (tags[k][-1] if tags[k] else "" for k in "HL")
+    h_up, l_up = h in ("HH", "ATH"), l == "HL"
+    i, k = piv[-1]
+    return {"trend": "Uptrend" if h_up and l_up else "Downtrend" if not (h_up or l_up) else "Mixed", "high": h, "low": l,
+            "belowLow": last["L"] is not None and c[-1] < c[last["L"]], "rising": up,
+            "move": round(c[-1] / c[i] - 1, 4), "from": i, "fromType": k}
+
+
+def overview(d):
+    """A few numbers per market for the home page, from the same closes the market page uses."""
+    day = d.index[-1]
+    start = day - pd.DateOffset(years=SHOW_YEARS + WARMUP_YEARS)
+    w = d[d.index >= start]
+    c = [round(float(x), 2) for x in w.close]  # as in the page's data file, so the turns match the page
+    prev_max, m = [], float(d.close[d.index < start].max()) if (d.index < start).any() else 0.0
+    for x in c:
+        prev_max.append(m)
+        m = max(m, x)
+    out = {"date": str(day.date()), "close": c[-1], "day": round(c[-1] / c[-2] - 1, 4) if len(c) > 1 else None,
+           "ath": round(float(d.pct_ATH.iloc[-1]), 4), "athDate": str(d.prev_ath_date.iloc[-1].date()),
+           "athDays": (day - d.prev_ath_date.iloc[-1]).days,
+           "vol": round(float(np.log(d.close).diff().iloc[-252:].std() * math.sqrt(252)), 4)}
+    for y in (1, 5, 10):
+        then = day - pd.DateOffset(years=y)
+        past = d.close[d.index <= then]
+        out[f"r{y}"] = round(float((d.close.iloc[-1] / past.iloc[-1]) ** (1 / y) - 1), 4) if len(past) else None  # 5y and 10y: per year
+        if y > 1:
+            out[f"dd{y}"] = round(min(float(d.pct_ATH[d.index > then].min()), 0), 4) if len(past) else None
+    out["tr"] = {}
+    for t in TREND_SIZES:
+        z = trend(c, prev_max, t / 100)
+        if z:
+            out["tr"][t] = {**z, "from": str(w.index[z["from"]].date())}
+    # As the page's "Below the record" tile: past 10%+ falls from a record in 10 years, and how many went deeper than today
+    y10 = str((day - pd.DateOffset(years=10)).date())
+    eps = episodes(d, d.index[0])
+    past = eps[(eps.Status == "reversed") & (eps["Depth %"] <= -BIG_FALL) & (eps["Peak on"].astype(str) >= y10)]
+    out["falls"], out["deeper"] = len(past), int((past["Depth %"] < round(float(d.pct_ATH.iloc[-1]), 5) * 100).sum())
+    # As the page's "Higher a year later" tile: past falls that got this deep, and how many were higher a year on
+    s = similar(d)
+    yrs = [x["fwd"][FWD] for x in s["scen"][0]["cases"] if len(x["fwd"]) > FWD] if s and s["rows"] else []
+    out["yrUp"], out["yrN"] = sum(v > 0 for v in yrs), len(yrs)
+    return out
+
+
 def build(t, d, slug):
-    """One market's data file, redirect and guess; runs in a worker process. Returns its row for market_highs.csv."""
+    """One market's data file, redirect and guess; runs in a worker process. Returns its row for market_highs.csv
+    and its home page numbers."""
     start = d.index[-1] - pd.DateOffset(years=SHOW_YEARS)
     # Every market in the menu, also those not rebuilt in this run
     pages = [{"name": n, "href": f"app.html?m={slug[o]}", "here": o == t, "group": g} for g, m in GROUPS.items() for o, n in m.items()]
@@ -394,7 +471,7 @@ def build(t, d, slug):
         f'<!doctype html>\n<meta charset="utf-8">\n<title>{title}</title>\n'
         f'<meta http-equiv="refresh" content="0; url={url}">\n<a href="{url}">{title}</a>\n', encoding="utf-8")
     return {"index": NAMES.get(t, t), "date": d.index[-1].date(), "close": round(d.close.iloc[-1], 2),
-            "vs ATH %": round(d.pct_ATH.iloc[-1] * 100, 2), "ATH set on": d.prev_ath_date.iloc[-1].date()}
+            "vs ATH %": round(d.pct_ATH.iloc[-1] * 100, 2), "ATH set on": d.prev_ath_date.iloc[-1].date()}, overview(d)
 
 
 def file_date(f):
@@ -405,10 +482,11 @@ def file_date(f):
     return m and m[1]
 
 
-def write_index(slug, done):
+def write_index(slug, done, sums):
     """data/index.js for the menu: every market in markets.csv; a built one (its data file exists) has its last close
     and build time. Markets not rebuilt in this run keep their entry while their file is unchanged; a file written since
-    (another run, another folder) gets its date from the file itself."""
+    (another run, another folder) gets its date from the file itself. "sum" holds the home page numbers; a market
+    without new ones keeps its old ones."""
     try:
         old = json.loads(INDEX.read_text(encoding="utf-8").removeprefix("window.INDEX = ").rstrip().rstrip(";"))
     except (OSError, ValueError):  # missing, or cut short by a crashed write: rebuild it from the files
@@ -426,7 +504,8 @@ def write_index(slug, done):
                 date, built = e["date"], e["built"]
             else:
                 date, built = file_date(f), datetime.fromtimestamp(mtime).isoformat(timespec="seconds")
-            rows.append({"symbol": t, "slug": slug[t], "name": n, "group": g, "date": date, "built": built, "mtime": mtime})
+            rows.append({"symbol": t, "slug": slug[t], "name": n, "group": g, "date": date, "built": built, "mtime": mtime,
+                         "sum": sums.get(t) or e.get("sum")})
     tmp = INDEX.with_suffix(".js.tmp")  # replaced in one step, so the page or another run never reads half a file
     tmp.write_text("window.INDEX = [\n" + ",\n".join(map(json.dumps, rows)) + "\n];\n", encoding="utf-8")
     os.replace(tmp, INDEX)
@@ -496,10 +575,27 @@ def add(sym, name, group):
     print(f"Added {sym} ({name}) to {group} in markets.csv.")
 
 
+def slugs(tickers):
+    # Only [a-z0-9_.-]: app.html accepts nothing else in ?m=
+    return {t: re.sub(r"[^a-z0-9_.-]", "_", t.strip("^").lower()) for t in tickers}
+
+
+def summary_only():
+    """The home page numbers for every market in markets.csv with closes in data/closes.csv: no download, no pages."""
+    close = pd.read_csv(STORE, index_col=0, parse_dates=True)
+    data = {t: highs(s) for t in NAMES if t in close and not (s := close[t].dropna().loc[lambda x: x > 0]).empty}
+    with ProcessPoolExecutor(min(61, os.process_cpu_count() or 1)) as pool:
+        sums = dict(zip(data, pool.map(overview, data.values(), chunksize=8)))
+    write_index(slugs(NAMES), {}, sums)
+    print(f"Home page numbers for {len(sums)} markets.")
+
+
 def main():
     args, new = sys.argv[1:], None
     if args[:1] == ["--serve"]:
         return serve(int(args[1]) if len(args) > 1 else 8765)
+    if args[:1] == ["--summary-only"]:
+        return summary_only()
     if args[:1] == ["--add"]:
         if len(args) not in (3, 5) or (len(args) == 5 and args[3] != "--group"):
             sys.exit('Usage: python market_highs.py --add SYMBOL "Name" [--group GROUP]')
@@ -516,8 +612,7 @@ def main():
     data = {t: highs(s) for t, s in closes.items()}
     if new:
         add(*new)  # only once Yahoo knows the symbol, so a wrong one never lands in the list
-    # Only [a-z0-9_.-]: app.html accepts nothing else in ?m=
-    slug = {t: re.sub(r"[^a-z0-9_.-]", "_", t.strip("^").lower()) for t in NAMES | data}
+    slug = slugs(NAMES | data)
     (OUT / "plotly.min.js").write_text(get_plotlyjs(), encoding="utf-8")
     (OUT / "data").mkdir(exist_ok=True)
 
@@ -525,15 +620,16 @@ def main():
     # Windows allows at most 61 worker processes
     with ProcessPoolExecutor(min(61, os.process_cpu_count() or 1, len(data))) as pool:
         jobs = {t: pool.submit(build, t, d, slug) for t, d in data.items()}
-    summary, failed = [], []
+    summary, sums, failed = [], {}, []
     for t, job in jobs.items():
         try:
-            summary.append(job.result())
+            row, sums[t] = job.result()
+            summary.append(row)
         except Exception as e:
             print(f"{t} failed:", file=sys.stderr)
             traceback.print_exception(e)  # includes the worker's traceback
             failed.append(t)
-    write_index(slug, {t: str(data[t].index[-1].date()) for t in jobs if t not in failed})
+    write_index(slug, {t: str(data[t].index[-1].date()) for t in jobs if t not in failed}, sums)
     if summary:
         table = pd.DataFrame(summary)
         print(table.to_string(index=False))

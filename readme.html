@@ -51,7 +51,7 @@ python market_highs.py "^IXIC" "^GSPC"  # only these (Yahoo symbols)</code></pre
 <p>Run it from this folder. Quote symbols that start with <code>^</code>: in Windows <code>cmd</code> an unquoted <code>^</code> is dropped.
 A market that fails is printed with its error and the run ends with a non-zero exit code; the others are still built.
 A run for only some markets updates their rows in <code>market_highs.csv</code> and keeps the others.</p>
-<p>Then open <code>app.html</code> in a browser (the Nasdaq Composite), or pick a market with <code>?m=</code>:
+<p>Then open <code>index.html</code> in a browser for every market at a glance, or <code>app.html</code> (the Nasdaq Composite), or pick a market with <code>?m=</code>:
 <code>app.html?m=gspc</code>. <code>highs_ixic.html</code> and the other <code>highs_*.html</code> still work and open the same page.
 It works offline; <code>plotly.min.js</code> is written next to it on every run. The data files are not kept in git; each machine builds its own.
 </p>
@@ -69,6 +69,27 @@ and the Copy button only. Ctrl+C stops the server.</p>
 <p><b>Add a company or index:</b> <code>python market_highs.py --add "SPOT" "Spotify"</code> adds the Yahoo symbol and name to
 <code>markets.csv</code> (group Companies; <code>--group "Indices"</code> for an index) and builds it. A symbol Yahoo has no data for is not added. Only the new market's history is downloaded;
 the 23:00 run includes it from then on, and it is in the list straight away.</p>
+
+<h2 id="home">The home page</h2>
+<p><code>index.html</code> is the way in: every market on one page, so I can see which of the 540 are worth a closer look.
+It is a starting list, not advice; the market's own page has the detail. Each row and each dot opens it.</p>
+<ul>
+<li><b>Headline counts:</b> how many markets are in an uptrend or a downtrend at both reversal sizes, at or near their record, in a fall of 20% or more.</li>
+<li><b>Trend by group:</b> up, mixed and down per group. Indices are read at 8% reversals, commodities and crypto at 10%,
+companies at 10% and at 15%. The size matters: on 20 Nov 2026 Hershey read <i>Downtrend</i> at 10% (its last low, 30 Sep 2026, was below the one before)
+and <i>Uptrend</i> at 15% (the fall from the 27 Feb 2026 high has not turned by 15% yet, so the last confirmed high and low are still higher ones).
+Both are right at their scale; the table gives the size with every label and the current move under it.</li>
+<li><b>Scatter:</b> distance below the record against the 5-year return per year, coloured and shaped by trend.</li>
+<li><b>Screens:</b> uptrend at both sizes, near the record (within 5%), a deep fall (20%+) where most past falls this deep were higher a year later, downtrend at both sizes.</li>
+<li><b>The list:</b> every market, filtered by group, searched by name or ticker and sorted by any column: trend, distance and days from the record, last close and day move,
+returns over 1, 5 and 10 years (5 and 10 per year), the deepest fall below the record in 5 and 10 years, 1-year volatility, how many past 10%+ falls went deeper than today,
+and how many past falls this deep were higher a year later. The mark before the name is the same freshness mark as in the market list.</li>
+<li><b>Indices:</b> each index at 8% with its 5- and 10-year return and deepest fall.</li>
+</ul>
+<p>The numbers are worked out in Python with the same rules as the market page and saved in <code>data/index.js</code>, so the home page
+never loads the large market files. Every build refreshes them for the markets it builds; the others keep theirs.
+<code>python market_highs.py --summary-only</code> works them out again for every market from the closes already in <code>data/closes.csv</code>,
+without downloading or building pages: about a minute for all of them.</p>
 
 <h2>How it works</h2>
 <svg viewBox="0 0 820 200" role="img" aria-label="Flow: Yahoo Finance daily closes go into market_highs.py, which writes one data file per market in data/, shown by app.html, plus a redirect page per market, a CSV of today's numbers, and one saved guess per market per day in predictions/">
@@ -153,8 +174,9 @@ WTI's negative closes of April 2020 are dropped, since % moves and a log scale n
 <tr><th>File</th><th>What it is</th></tr>
 <tr><td><code>market_highs.py</code></td><td>Downloads the closes, works out highs, falls, similar cases and guesses, writes the data files.</td></tr>
 <tr><td><code>markets.csv</code></td><td>Every market: Yahoo symbol, name and menu group. Edit it to add or remove markets.</td></tr>
+<tr><td><code>index.html</code></td><td>The home page: every market at a glance, with screens and a sortable list. Reads <code>data/index.js</code>.</td></tr>
 <tr><td><code>app.html</code></td><td>The page for every market: layout, charts and tooltips. Opens <code>data/&lt;market&gt;.js</code> for <code>?m=&lt;market&gt;</code>.</td></tr>
-<tr><td><code>data/index.js</code></td><td>The list on the page: every market with its symbol, group, last close and build time, rewritten on every run (not in git).</td></tr>
+<tr><td><code>data/index.js</code></td><td>The list on the page: every market with its symbol, group, last close and build time, and the home page numbers, rewritten on every run (not in git).</td></tr>
 <tr><td><code>data/&lt;market&gt;.js</code></td><td>One market's numbers for the page, rewritten when that market is built (not in git).</td></tr>
 <tr><td><code>highs_*.html</code></td><td>Short redirects to <code>app.html?m=&lt;market&gt;</code>, so old links and bookmarks keep working (not in git).</td></tr>
 <tr><td><code>plotly.min.js</code></td><td>The chart library the page loads, written on every run (not in git).</td></tr>
