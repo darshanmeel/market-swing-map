@@ -11,34 +11,54 @@
   --mono:ui-monospace,Consolas,monospace}
 *{box-sizing:border-box}
 body{margin:0;background:var(--ground);color:var(--ink);font:14px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif}
-.num,table,.tile b{font-variant-numeric:tabular-nums}
-main{max-width:1280px;margin:0 auto;padding:32px 32px 64px;display:flex;flex-direction:column;gap:22px}
+.num,table,.sc b,.lk b{font-variant-numeric:tabular-nums;font-family:var(--mono)}
+main{max-width:1100px;margin:0 auto;padding:32px 24px 64px;display:flex;flex-direction:column;gap:22px}
 header{display:flex;flex-direction:column;gap:10px}
 .kicker{font:12px var(--mono);color:var(--muted);text-transform:uppercase;letter-spacing:.08em}
-h1{font-size:34px;line-height:1.15;font-weight:700;letter-spacing:-.01em;margin:0;max-width:980px}
-h2{font-size:21px;font-weight:700;margin:0}
-.verdict{font-size:17px;line-height:1.55;color:#33383F;max-width:900px;margin:0}
+h1{font-size:30px;line-height:1.2;font-weight:700;letter-spacing:-.01em;margin:0}
+h2{font-size:19px;font-weight:700;margin:0}h3{font-size:14px;margin:0}
 .note{font-size:13px;color:var(--ink2);margin:0;max-width:900px}
-a{color:var(--rise)}a:focus-visible,button:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid var(--rise);outline-offset:2px}
-.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:20px;display:flex;flex-direction:column;gap:14px;min-width:0}
-.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px}
-.tile{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:14px 16px;display:flex;flex-direction:column;gap:4px}
-.tile small{color:var(--muted);font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.06em}
-.tile b{font:600 26px/1.25 var(--mono)}.tile p{margin:0;color:var(--ink2);font-size:13px}
-.grp{display:grid;grid-template-columns:minmax(150px,220px) 70px minmax(0,1fr) 230px;gap:8px 14px;align-items:center;font-size:13px}
-.grp .hd{font-weight:600;color:var(--muted);font-size:12px}
-.bar{display:flex;height:18px;border-radius:4px;overflow:hidden;background:var(--line2)}.bar i{display:block;height:100%}
+a{color:var(--rise)}a:focus-visible,button:focus-visible,input:focus-visible{outline:2px solid var(--rise);outline-offset:2px}
+button{font:inherit;color:inherit;cursor:pointer}
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:18px;display:flex;flex-direction:column;gap:12px;min-width:0}
+.cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,420px),1fr));gap:22px}
+.screens{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px}
+.sc{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:12px 14px;display:flex;flex-direction:column;gap:6px;text-align:left}
+.sc small{color:var(--muted);font-size:12px;font-weight:600}.sc b{font-size:28px;line-height:1.1;font-weight:600}.sc span{font-size:12px;color:var(--ink2)}
+.sc[aria-pressed=true]{border-color:var(--ink);box-shadow:inset 0 0 0 1px var(--ink)}
+.pb{display:block;height:4px;background:var(--line2);border-radius:2px;overflow:hidden}.pb i{display:block;height:100%;background:var(--ink2)}.pb i.u{background:var(--rise)}.pb i.d{background:var(--fall)}
+.wl{display:flex;flex-wrap:wrap;gap:8px}.wl a{border:1px solid var(--line);border-radius:6px;padding:4px 10px;text-decoration:none;font-size:13px}.wl a span{color:var(--ink2);font:12px var(--mono)}
+.looks{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:10px}
+.lk{border:1px solid var(--line);border-radius:8px;padding:12px;display:flex;flex-direction:column;gap:8px}
+.lk ol{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:7px}
+.lk li{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:0 8px;font-size:13px}.lk li b{font-size:13px;font-weight:600;text-align:right}
+.lk li small{grid-column:1/-1;color:var(--muted);font-size:12px}.lk li .pb{grid-column:1/-1;height:3px}
+.grp{display:grid;grid-template-columns:minmax(110px,1fr) 40px minmax(0,2fr);gap:6px 12px;align-items:center;font-size:13px}
+.grp .hd{font-weight:600;color:var(--muted);font-size:12px}.grp .txt{grid-column:3;font-size:12px;color:var(--ink2);margin-top:-4px}
+.bar{display:flex;height:16px;border-radius:3px;overflow:hidden;background:var(--line2)}.bar i{display:block;height:100%}
 .u{background:var(--rise)}.m{background:#B9BEC6}.d{background:var(--fall)}
 .key{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:12px;color:var(--ink2)}.key span{display:flex;align-items:center;gap:6px}.key i{width:12px;height:12px;border-radius:2px;display:inline-block}
+.bands{display:flex;flex-direction:column;gap:4px}
+.band{all:unset;display:grid;grid-template-columns:96px minmax(0,1fr) 36px;gap:10px;align-items:center;font-size:13px;padding:3px 4px;border-radius:4px;cursor:pointer}
+.band:hover{background:var(--line2)}.band[aria-pressed=true]{background:var(--rise-bg);font-weight:600}.band:focus-visible{outline:2px solid var(--rise)}
+.band .bar{background:none}.band b{text-align:right;font:600 13px var(--mono)}
 .seg{display:flex;flex-wrap:wrap;gap:6px}
-.seg button{font:13px system-ui,sans-serif;min-height:36px;padding:0 12px;border:1px solid var(--chip);background:var(--card);border-radius:6px;cursor:pointer;color:var(--ink)}
-.seg button[aria-pressed=true]{background:var(--ink);color:#fff;border-color:var(--ink)}
-.ctl{display:flex;flex-wrap:wrap;gap:10px 16px;align-items:center}
-.ctl label{font-weight:600;display:flex;align-items:center;gap:8px}
-select,input{font:14px system-ui,sans-serif;padding:7px 10px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--ink)}
-input{width:220px;max-width:100%}
+.seg button{font-size:13px;min-height:32px;padding:0 10px;border:1px solid var(--chip);background:var(--card);border-radius:6px}
+.seg button[aria-pressed=true]{background:var(--ink);color:#fff;border-color:var(--ink)}.seg button span{color:var(--faint);font:12px var(--mono)}
+.ctl{display:flex;flex-wrap:wrap;gap:10px 16px;align-items:center}.ctl label{font-weight:600;display:flex;align-items:center;gap:8px}
+input{font:14px system-ui,sans-serif;padding:6px 10px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--ink);width:220px;max-width:100%}
+.lnk{all:unset;color:var(--rise);cursor:pointer;font-size:13px;text-decoration:underline}.lnk:focus-visible{outline:2px solid var(--rise)}
+.rows{display:flex;flex-direction:column}
+.row{display:grid;grid-template-columns:28px minmax(130px,1.3fr) minmax(160px,1fr) minmax(130px,1.2fr) 120px 140px minmax(130px,1fr);gap:12px;padding:10px 4px;border-bottom:1px solid var(--line2);font-size:13px;position:relative;align-items:start}
+.row.hd{font-size:12px;font-weight:600;color:var(--muted);padding-top:0}
+.row small{display:block;color:var(--muted);font-size:12px}.row .t{white-space:nowrap}
+.star{all:unset;cursor:pointer;font-size:18px;line-height:1;color:var(--faint);text-align:center;padding:4px;min-width:28px;min-height:28px;box-sizing:border-box}.star[aria-pressed=true]{color:var(--gold)}.star:focus-visible{outline:2px solid var(--rise)}
+.mini{height:5px;background:var(--line2);border-radius:2px;margin:3px 0 2px}.mini i{display:block;height:100%;background:var(--fall);border-radius:2px}
+.rr{display:grid;grid-template-columns:26px 50px auto;gap:6px;align-items:center;font:12px var(--mono)}
+.dv{height:6px;background:var(--line2);position:relative}.dv::after{content:"";position:absolute;left:50%;top:-2px;bottom:-2px;width:1px;background:var(--faint)}.dv i{position:absolute;top:0;bottom:0}
+.more{align-self:flex-start;border:1px solid var(--chip);background:var(--card);border-radius:6px;padding:6px 14px}
 .scroll{overflow:auto;max-height:640px;border:1px solid var(--line);border-radius:8px}
-table{border-collapse:collapse;width:100%;font-size:13px}
+table{border-collapse:collapse;width:100%;font-size:13px;font-family:inherit}
 th{text-align:left;color:var(--muted);font-weight:600;border-bottom:1px solid var(--line);padding:8px;position:sticky;top:0;background:var(--card);z-index:1;vertical-align:bottom}
 th:has(button){padding:0}th button{all:unset;display:block;padding:8px;cursor:pointer;white-space:normal;min-width:56px}
 th button:focus-visible{outline:2px solid var(--rise);outline-offset:-2px}
@@ -52,11 +72,12 @@ td small{display:block;color:var(--muted);font-size:12px}
 .t.Uptrend{background:var(--rise-bg);color:var(--rise)}.t.Downtrend{background:var(--fall-bg);color:var(--fall-ink)}.t.Mixed{background:var(--line2);color:var(--ink2)}
 .f0{color:#15803D}.f1{color:#B45309}.f2{color:#B91C1C}.off{color:var(--faint)}
 .fresh{font:12px var(--mono);color:var(--muted)}
-#scatter{height:460px}#idxChart{height:420px}
+#scatter{height:440px}#idxChart{height:420px}
 .two{display:flex;flex-direction:column;gap:16px}
 .foot{color:var(--muted);font-size:12px;max-width:900px;margin:0}
-@media (max-width:900px){.grp{grid-template-columns:1fr 50px;}.grp .bar,.grp .txt{grid-column:1/-1}.grp .hd:nth-child(n+3){display:none}}
-@media (max-width:600px){main{padding:20px 14px 48px}h1{font-size:26px}.verdict{font-size:16px}.card{padding:14px}#scatter{height:360px}.tile b{font-size:22px}}
+[hidden]{display:none!important}
+@media (max-width:1020px){.row{grid-template-columns:repeat(2,minmax(0,1fr));padding-right:34px}.row>:nth-child(2){grid-column:1/-1}.row .star{position:absolute;right:4px;top:10px}.row.hd{display:none}}
+@media (max-width:560px){main{padding:20px 12px 48px}h1{font-size:23px}.card{padding:12px}.row{grid-template-columns:1fr}#scatter{height:360px}.sc b{font-size:24px}}
 </style>
 </head>
 <body>
@@ -64,36 +85,55 @@ td small{display:block;color:var(--muted);font-size:12px}
   <header>
     <div class="kicker" id="asof">Below the Record</div>
     <h1 id="title">Every market at a glance</h1>
-    <p class="verdict" id="verdict"></p>
-    <p class="note"><b>History, not a forecast or advice.</b> These screens only sort markets by what their prices did; open a market for its swings, past falls and what came next. <a href="readme.html#home">How this page works</a></p>
+    <p class="note" id="lede"><b>History, not a forecast or advice.</b> This page only sorts markets by what their prices did. Pick a card to filter the list below; open a market for its swings, past falls and what came next. <a href="readme.html#home">How this page works</a></p>
   </header>
 
-  <section class="tiles" id="tiles" aria-label="Headline counts"></section>
+  <section class="screens" id="screens" aria-label="Screens: pick one to filter the list"></section>
 
-  <section class="card" aria-labelledby="trendH">
-    <h2 id="trendH">Trend by group, at its reversal size</h2>
-    <p class="note">A turn counts only once the price moves back by the reversal size. A small size sees the recent swings, a big one the large moves, so one market can read <i>Uptrend</i> at 10% and <i>Downtrend</i> at 15%: both are right at their scale. Indices are read at 8%, commodities and crypto at 10%, companies at 10% and 15%.</p>
-    <div class="key"><span><i class="u"></i>Uptrend: higher high and higher low</span><span><i class="m"></i>Mixed</span><span><i class="d"></i>Downtrend: lower high and lower low</span></div>
-    <div class="grp" id="groups"></div>
+  <section class="card" aria-labelledby="watchH">
+    <h2 id="watchH">Your watchlist</h2>
+    <div class="wl" id="watch"></div>
   </section>
+
+  <section class="card" aria-labelledby="lookH">
+    <h2 id="lookH">Worth a closer look</h2>
+    <p class="note">The markets that stand out, each judged against its own normal swing, so a calm utility and a jumpy ship stock are compared fairly. Click a name for its numbers.</p>
+    <div class="looks" id="looks"></div>
+  </section>
+
+  <div class="cols">
+    <section class="card" aria-labelledby="bandH">
+      <h2 id="bandH">How far below the record, every market</h2>
+      <p class="note">Coloured by the trend at each market's first reversal size. Click a band to filter the list.</p>
+      <div class="key"><span><i class="u"></i>Uptrend</span><span><i class="m"></i>Mixed</span><span><i class="d"></i>Downtrend</span></div>
+      <div class="bands" id="bands" role="group" aria-label="Depth bands"></div>
+    </section>
+    <section class="card" aria-labelledby="trendH">
+      <h2 id="trendH">Trend by group, at its reversal size</h2>
+      <p class="note">A turn counts only once the price moves back by the reversal size, so one market can read <i>Uptrend</i> at 10% and <i>Downtrend</i> at 15%: both are right at their scale. Indices are read at 8%, commodities and crypto at 15%, companies at 10% and 15%.</p>
+      <div class="key"><span><i class="u"></i>Uptrend: higher high and higher low</span><span><i class="m"></i>Mixed</span><span><i class="d"></i>Downtrend: lower high and lower low</span></div>
+      <div class="grp" id="groups"></div>
+    </section>
+  </div>
 
   <section class="card" aria-labelledby="mapH">
     <h2 id="mapH">Below the record against the 5-year return</h2>
-    <p class="note">One dot per market in the chosen group and screen (the search does not apply). Right: close to its record; up: strong 5 years. Colour and shape give the trend at the market's first reversal size. Click a dot to open the market. <span id="mapNote"></span></p>
-    <div id="scatter" role="img" aria-label="Scatter of every market in the table: percent below the record close against the 5-year return per year, by trend"></div>
+    <p class="note">One dot per market in the chosen filters (the search does not apply). Right: close to its record; up: strong 5 years. Colour and shape give the trend at the market's first reversal size. Click a dot to open the market. <span id="mapNote"></span></p>
+    <div id="scatter" role="img" aria-label="Scatter of the filtered markets: percent below the record close against the 5-year return per year, by trend"></div>
   </section>
 
   <section class="card" aria-labelledby="listH">
-    <h2 id="listH">Screens and the full list</h2>
-    <div class="seg" id="screens" role="group" aria-label="Screens"></div>
-    <p class="note" id="screenNote"></p>
+    <h2 id="listH">All markets</h2>
+    <div class="seg" id="groupChips" role="group" aria-label="Group"></div>
     <div class="ctl">
-      <label>Group <select id="group"><option value="">All groups</option></select></label>
       <label>Search <input id="q" type="search" placeholder="Name or ticker" autocomplete="off"></label>
+      <button type="button" class="lnk" id="view">Show as a table</button>
       <span class="fresh"><b class="f0">&#9679; up to date</b> · <b class="f1">&#9670; up to a week old</b> · <b class="f2">&#9650; older</b> · &#8212; not built</span>
     </div>
-    <p class="note" id="count" role="status"></p>
-    <div class="scroll"><table id="list"></table></div>
+    <div class="seg" id="sorts" role="group" aria-label="Sort by"></div>
+    <p class="note"><span id="count" role="status"></span> <button type="button" class="lnk" id="clear" hidden>Clear filters</button></p>
+    <div id="cards"><div class="rows" id="rows"></div><button type="button" class="more" id="more" hidden></button></div>
+    <div class="scroll" id="tableBox" hidden><table id="list"></table></div>
   </section>
 
   <section class="card" aria-labelledby="idxH">
@@ -105,7 +145,7 @@ td small{display:block;color:var(--muted);font-size:12px}
     </div>
   </section>
 
-  <p class="foot">Built by <code>market_highs.py</code> from Yahoo Finance daily closes. Returns are price only, without dividends; 5- and 10-year returns are per year. Volatility: the spread of daily moves over the last year, as a yearly figure. "Past 10%+ falls deeper": of the falls of 10% or more from a record in the last 10 years, how many went deeper than today. "Higher a year later": of the past falls that got as deep as today, how many were higher a year after they got there.</p>
+  <p class="foot">Built by <code>market_highs.py</code> from Yahoo Finance daily closes. Returns are price only, without dividends; 5- and 10-year returns are per year. Volatility: the spread of daily moves over the last year, as a yearly figure; a normal day is that figure divided by the square root of 252. "Past 10%+ falls deeper": of the falls of 10% or more from a record in the last 10 years, how many went deeper than today. "Higher a year later": of the past falls that got as deep as today, how many were higher a year after they got there.</p>
 </main>
 <script>
 const $ = id => document.getElementById(id);
@@ -122,10 +162,11 @@ function fresh(date) {
   for (const d = new Date(date + 'T12:00:00'), t = new Date(); d.setDate(d.getDate() + 1) && d <= t;) if (d.getDay() % 6) n++;
   return n <= 1 ? 0 : n <= 5 ? 1 : 2;
 }
-// The reversal sizes each group is read at; the first one colours the scatter
+// The reversal sizes each group is read at; the first one colours the scatter and the depth bands
 const SIZES = {'Indices': [8], 'Commodities and crypto': [15]}, sizes = e => SIZES[e.group] || [10, 15];
 const SHORT = {Uptrend: 'Up', Downtrend: 'Down', Mixed: 'Mixed'};
 const trendAt = (e, t) => e.sum && e.sum.tr[t] ? e.sum.tr[t].trend : null;
+const first = e => trendAt(e, sizes(e)[0]);
 const every = (e, w) => sizes(e).every(t => trendAt(e, t) === w);
 // An uptrend whose close is already below its last swing low (a downtrend above its last high) is about to turn: left out
 const broken = (e, k) => sizes(e).some(t => e.sum.tr[t] && e.sum.tr[t][k]);
@@ -133,21 +174,26 @@ const upAll = e => every(e, 'Uptrend') && !broken(e, 'belowLow'), dnAll = e => e
 const near = e => e.sum && e.sum.ath >= -.05, deep = e => e.sum && e.sum.ath <= -.2;
 const deepBack = e => deep(e) && e.sum.yrN >= 3 && e.sum.yrUp * 2 > e.sum.yrN;
 const SCREENS = [
-  ['All', () => true, ''],
-  ['Uptrend at every size read', upAll, 'Uptrend at 10% and at 15% (indices at 8%, commodities and crypto at 10%), and the last close is not below the last swing low.'],
-  ['Near the record (within 5%)', near, 'The last close is at most 5% below the highest close ever.'],
-  ['Deep fall (20%+) where most past falls this deep were higher a year later', deepBack, 'At least 20% below the record, and of at least 3 past falls that got this deep, more than half were higher a year after.'],
-  ['Downtrend at every size read', dnAll, 'Downtrend at 10% and at 15% (indices at 8%, commodities and crypto at 10%), and the last close is not above the last swing high.'],
+  ['All', () => true],
+  ['Uptrend at every size', upAll],
+  ['Near the record', near],
+  ['Down 20% or more', deep],
+  ['Deep and past falls mostly recovered', deepBack],
+  ['Downtrend at every size', dnAll],
 ];
+// Depth bands by the lowest ath they hold
+const BANDS = [['At the record', -.001], ['Within 5%', -.05], ['5–10%', -.1], ['10–20%', -.2], ['20–30%', -.3], ['30–50%', -.5], ['50% or more', -Infinity]];
+const atRec = e => e.sum.ath >= -.001;
+const how = z => `${z.rising ? 'rising' : 'falling'} ${pc(z.move, 0)} since the ${dl(z.from)} ${z.fromType === 'H' ? 'high' : 'low'}`;
+const bandOf = e => e.sum ? BANDS.findIndex(b => e.sum.ath >= b[1]) : -1;
 
 function trendCell(e) {
   if (!e.sum) return '–';
   return sizes(e).map(t => {
     const z = e.sum.tr[t];
     if (!z) return `<span class="t">${t}%: –</span>`;
-    const how = `${z.rising ? 'rising' : 'falling'} ${pc(z.move, 0)} since the ${dl(z.from)} ${z.fromType === 'H' ? 'high' : 'low'}`;
     const warn = z.belowLow ? ' · <b>below last low</b>' : z.aboveHigh ? ' · <b>above last high</b>' : '';
-    return `<span class="t ${z.trend}" title="At ${t}% reversals: last high ${z.high || '–'}, last low ${z.low || '–'}; ${how}">${t}%: ${SHORT[z.trend]}</span><small>${how}${warn}</small>`;
+    return `<span class="t ${z.trend}" title="At ${t}% reversals: last high ${z.high || '–'}, last low ${z.low || '–'}; ${how(z)}">${t}%: ${SHORT[z.trend]}</span><small>${how(z)}${warn}</small>`;
   }).join('');
 }
 const score = e => e.sum ? sizes(e).reduce((s, t) => s + ({Uptrend: 1, Mixed: 0, Downtrend: -1}[trendAt(e, t)] ?? 0), 0) / sizes(e).length : null;
@@ -161,18 +207,19 @@ const legCell = (e, k) => { const g = leg(e, k);
 const href = e => `app.html?m=${encodeURIComponent(e.slug)}&r=${sizes(e)[0]}`;
 // Deepest fall: over the whole history when it is shorter than the window (no 5- or 10-year return then)
 const dd = (e, y) => S(e)[`dd${y}`] == null ? '–' : pc(S(e)[`dd${y}`], 0) + (S(e)[`r${y}`] == null ? '<small>since listing</small>' : '');
+const mark = e => { const f = e.built && e.date ? fresh(e.date) : null;
+  return `<span class="${f === null ? 'off' : 'f' + f}" title="${f === null ? 'Not built yet' : 'Last close ' + dl(e.date)}">${f === null ? '—' : MARK[f]}</span>`; };
+const close = e => e.sum.close.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
 const COLS = [
-  {k: 'Market', v: e => e.name, c: e => {
-    const f = e.built && e.date ? fresh(e.date) : null;
-    return `<span class="${f === null ? 'off' : 'f' + f}" title="${f === null ? 'Not built yet' : 'Last close ' + dl(e.date)}">${f === null ? '—' : MARK[f]}</span> <a href="${href(e)}">${esc(e.name)}</a><small>${esc(e.symbol)} · ${esc(e.group)}</small>`; }},
+  {k: 'Market', v: e => e.name, c: e => `${starBtn(e)} ${mark(e)} <a href="${href(e)}">${esc(e.name)}</a><small>${esc(e.symbol)} · ${esc(e.group)}</small>`},
   {k: 'Trend', v: score, c: trendCell},
   {k: 'Now, since the last turn', r: 1, v: e => tz(e) ? tz(e).move : null, c: e => { const z = tz(e);
     return z ? `${sg(z.move)}<small>${len(z.since)} since the ${dl(z.from)} ${z.fromType === 'H' ? 'high' : 'low'}, at ${PAGE(e)}%</small>` : '–'; }},
   {k: 'Swing before', r: 1, v: e => leg(e, 1)?.move ?? null, c: e => legCell(e, 1)},
   {k: 'Swing before that', r: 1, v: e => leg(e, 2)?.move ?? null, c: e => legCell(e, 2)},
-  {k: 'Below the record', r: 1, v: e => S(e).ath, c: e => e.sum ? `${pc(Math.min(e.sum.ath, 0))}<small>${e.sum.ath >= 0 ? 'record close' : dl(e.sum.athDate)}</small>` : '–'},
+  {k: 'Below the record', r: 1, v: e => S(e).ath, c: e => e.sum ? `${pc(Math.min(e.sum.ath, 0))}<small>${atRec(e) ? 'record close' : dl(e.sum.athDate)}</small>` : '–'},
   {k: 'Days since record', r: 1, v: e => S(e).athDays, c: e => e.sum ? e.sum.athDays.toLocaleString('en-US') : '–'},
-  {k: 'Last close', r: 1, v: e => S(e).close, c: e => e.sum ? `${e.sum.close.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}<small>${sg(e.sum.day, 2)} on the day</small>` : '–'},
+  {k: 'Last close', r: 1, v: e => S(e).close, c: e => e.sum ? `${close(e)}<small>${sg(e.sum.day, 2)} on the day</small>` : '–'},
   {k: '1 year', r: 1, v: e => S(e).r1, c: e => sg(S(e).r1)},
   {k: '5 years, per year', r: 1, v: e => S(e).r5, c: e => sg(S(e).r5)},
   {k: '10 years, per year', r: 1, v: e => S(e).r10, c: e => sg(S(e).r10)},
@@ -182,23 +229,60 @@ const COLS = [
   {k: 'Past 10%+ falls deeper', r: 1, v: e => e.sum && e.sum.falls ? e.sum.deeper / e.sum.falls : null, c: e => e.sum ? `${e.sum.deeper} of ${e.sum.falls}` : '–'},
   {k: 'Higher a year later', r: 1, v: e => e.sum && e.sum.yrN ? e.sum.yrUp / e.sum.yrN : null, c: e => e.sum && e.sum.yrN ? `${e.sum.yrUp} of ${e.sum.yrN}` : '–'},
 ];
-let L = [], screen = 0, sortBy = 5, dir = -1;  // nearest the record first
+// Sorts of the card list: label, value, direction
+const SORTS = [['Closest to the record', e => S(e).ath, -1], ['Deepest fall', e => S(e).ath, 1], ['Best 5 years', e => S(e).r5, -1], ['Best 1 year', e => S(e).r1, -1],
+  ['Worst day', e => S(e).day, 1], ['Most volatile', e => S(e).vol, -1], ['Name', e => e.name, 1]];
+const WATCH = '★';
+let L = [], screen = 0, band = -1, grp = '', sortI = 0, sortBy = 5, dir = -1, asTable = false, shown = 40, last = '', W;
+try { const a = JSON.parse(localStorage.getItem('btr-watch') || '[]'); W = new Set(Array.isArray(a) ? a.filter(s => typeof s === 'string') : []); } catch { W = new Set(); }
+const nW = () => L.filter(e => W.has(e.symbol)).length;
+const save = () => { try { localStorage.setItem('btr-watch', JSON.stringify([...W])); } catch {} };
 
+const cmp = (v, d) => (a, b) => { const x = v(a), y = v(b); return x == null ? (y == null ? 0 : 1) : y == null ? -1 : (x < y ? -1 : x > y ? 1 : 0) * d; };
 function rows(q = $('q').value.trim().toLowerCase()) {
-  const g = $('group').value, col = COLS[sortBy];
-  return L.filter(e => (!g || e.group === g) && (!q || e.name.toLowerCase().includes(q) || e.symbol.toLowerCase().includes(q)) && SCREENS[screen][1](e))
-    .sort((a, b) => { const x = col.v(a), y = col.v(b); return x == null ? 1 : y == null ? -1 : (x < y ? -1 : x > y ? 1 : 0) * dir; });
+  const by = asTable ? cmp(COLS[sortBy].v, dir) : cmp(SORTS[sortI][1], SORTS[sortI][2]);
+  return L.filter(e => (grp === WATCH ? W.has(e.symbol) : !grp || e.group === grp) && (!q || e.name.toLowerCase().includes(q) || e.symbol.toLowerCase().includes(q))
+    && SCREENS[screen][1](e) && (band < 0 || bandOf(e) === band)).sort(by);
 }
-function table() {
-  const R = rows();
+function table(R) {
   $('list').innerHTML = `<thead><tr>${COLS.map((c, i) => `<th${c.r ? ' class="r"' : ''} aria-sort="${i === sortBy ? (dir > 0 ? 'ascending' : 'descending') : 'none'}"><button type="button" data-i="${i}">${c.k}</button></th>`).join('')}</tr></thead>` +
     `<tbody>${R.map(e => `<tr>${COLS.map(c => `<td${c.r ? ' class="r num"' : ''}>${c.c(e)}</td>`).join('')}</tr>`).join('')}</tbody>`;
-  $('count').textContent = `Showing ${R.length} of ${L.length} markets.`;
-  [...$('screens').children].forEach((b, i) => b.setAttribute('aria-pressed', i === screen));
-  $('screenNote').textContent = SCREENS[screen][2];
 }
+const starBtn = e => `<button type="button" class="star" data-s="${esc(e.symbol)}" aria-pressed="${W.has(e.symbol)}" aria-label="Watch ${esc(e.name)}">${W.has(e.symbol) ? '★' : '☆'}</button>`;
+const chip = (e, t) => { const z = e.sum.tr[t];
+  if (!z) return `<span class="t">${t}% –</span>`;
+  return `<span class="t ${z.trend}" title="At ${t}% reversals: ${how(z)}">${t}% ${SHORT[z.trend]}${z.belowLow ? ' below low' : z.aboveHigh ? ' above high' : ''}</span>`; };
+const ret = (k, v, m) => `<span class="rr"><span>${k}</span><span class="dv">${v == null ? '' :
+  `<i class="${v >= 0 ? 'u' : 'd'}" style="${v >= 0 ? 'left' : 'right'}:50%;width:${(Math.min(Math.abs(v) / m, 1) * 50).toFixed(1)}%"></i>`}</span>${sg(v, 0)}</span>`;
+function row(e) {
+  const s = e.sum, mk = `${starBtn(e)}<div>${mark(e)} <a href="${href(e)}"><b>${esc(e.name)}</b></a><small>${esc(e.symbol)} · ${esc(e.group)}</small>`;
+  if (!s) return `<div class="row">${mk}<small>No numbers yet</small></div></div>`;
+  const z = tz(e), a = Math.min(s.ath, 0);
+  const swings = z ? `${(z.legs || []).slice(-2).map(g => `<span class="num">${sg(g.move, 0)}</span>`).join(' → ')}${z.legs && z.legs.length ? ' → ' : ''}now <span class="num">${sg(z.move)}</span>` +
+    `<small>${len(z.since)} since the ${dl(z.from)} ${z.fromType === 'H' ? 'high' : 'low'}, at ${PAGE(e)}%</small>` : '–';
+  return `<div class="row">${mk}<small><span class="num">${close(e)}</span> · <span class="num">${sg(s.day, 2)}</span></small></div>` +
+    `<div>${sizes(e).map(t => chip(e, t)).join(' ')}</div><div>${swings}</div>` +
+    `<div><span class="num">${pc(a)}</span><div class="mini"><i style="width:${(Math.min(-a, 1) * 100).toFixed(1)}%"></i></div><small>${atRec(e) ? 'record close' : 'record ' + dl(s.athDate)}</small></div>` +
+    `<div>${ret('1y', s.r1, .5)}${ret('5y', s.r5, .25)}${ret('10y', s.r10, .25)}</div>` +
+    `<div>${s.ath > -.1 ? 'Less than 10% below the record' : s.falls ? `${s.deeper} of ${s.falls} past 10%+ falls went deeper` : 'No 10%+ fall from a record in 10 years'}${s.yrN ? `<small>${s.yrUp} of ${s.yrN} this deep were higher a year on</small>` : ''}</div></div>`;
+}
+const HEAD = '<div class="row hd"><span></span><span>Market</span><span>Trend</span><span>Last swings, then now</span><span>Below the record</span><span>Returns: 1y, then 5y and 10y per year</span><span>Past falls</span></div>';
+function list() {
+  const R = rows();
+  $('cards').hidden = asTable; $('tableBox').hidden = !asTable; $('sorts').hidden = asTable;
+  if (asTable) table(R);
+  else { $('rows').innerHTML = HEAD + R.slice(0, shown).map(row).join('');
+    const left = R.length - shown; $('more').hidden = left <= 0; $('more').textContent = `Show ${Math.min(40, left)} more (${left} left)`; }
+  const f = [screen && SCREENS[screen][0], band >= 0 && BANDS[band][0] + ' below the record', grp === WATCH ? 'watchlist' : grp].filter(Boolean);
+  $('count').textContent = `Showing ${R.length} of ${L.length} markets${f.length ? ': ' + f.join(' · ') : '.'}`; $('clear').hidden = !f.length;
+  [...$('screens').children].forEach(b => b.setAttribute('aria-pressed', +b.dataset.i === screen));
+  [...$('bands').children].forEach(b => b.setAttribute('aria-pressed', +b.dataset.i === band));
+  [...$('groupChips').children].forEach(b => b.setAttribute('aria-pressed', b.dataset.g === grp));
+  [...$('sorts').children].forEach((b, i) => b.setAttribute('aria-pressed', i === sortI));
+}
+function refresh() { shown = 40; list(); scatter(); }
 function scatter() {
-  const R = rows(''), first = e => trendAt(e, sizes(e)[0]), P = R.filter(e => e.sum && e.sum.r5 != null && first(e));
+  const R = rows(''), P = R.filter(e => e.sum && e.sum.r5 != null && first(e));
   const short = R.filter(e => e.sum && e.sum.r5 == null).length, flat = R.length - P.length - short;
   $('mapNote').textContent = `${P.length} of ${R.length} shown; ${short} without 5 years of history${flat ? `, ${flat} without a trend at their reversal size` : ''}.`;
   const T = [['Uptrend', css('--rise'), 'circle'], ['Mixed', '#8A919C', 'square'], ['Downtrend', css('--fall'), 'triangle-down']].map(([w, color, symbol]) => {
@@ -213,19 +297,52 @@ function scatter() {
     yaxis: {title: {text: '5-year return per year (%)'}, ticksuffix: '%', gridcolor: css('--line2'), zerolinecolor: '#C9CDD3'},
     hoverlabel: {bgcolor: '#15181D', font: {color: '#fff'}}}, {responsive: true, displayModeBar: false});
 }
-function tiles() {
-  const has = L.filter(e => e.sum), n = has.length, up = has.filter(upAll).length, dn = has.filter(dnAll).length;
-  const upB = has.filter(e => every(e, 'Uptrend')).length - up, dnB = has.filter(e => every(e, 'Downtrend')).length - dn;
-  const tile = (label, value, note) => `<div class="tile"><small>${label}</small><b>${value}</b><p>${note}</p></div>`;
-  $('tiles').innerHTML =
-    tile('Markets', n, `with numbers, of ${L.length} in the list${L.length - n ? `; ${L.length - n} without numbers yet` : ''}`) +
-    tile('Uptrend at every size read', up, `${dn} in a downtrend at every size; ${upB} more read Uptrend but closed below the last low, ${dnB} read Downtrend but closed above the last high`) +
-    tile('At or near the record', has.filter(near).length, `within 5% of the highest close ever; ${has.filter(e => e.sum.ath >= 0).length} closed at a record`) +
-    tile('In a fall of 20%+', has.filter(deep).length, `${has.filter(e => e.sum.ath <= -.5).length} of them 50% or more below the record`) +
-    tile('Deep fall where most past falls this deep were higher a year later', has.filter(deepBack).length, '20%+ below the record (at least 3 past falls)');
+function screens(has) {
+  const n = has.length, c = f => has.filter(f).length;
+  const upB = c(e => every(e, 'Uptrend')) - c(upAll), dnB = c(e => every(e, 'Downtrend')) - c(dnAll);
+  const why = ['', `${upB} more had Uptrend but closed below their last swing low`, `within 5% of the highest close; ${c(atRec)} closed at a record`,
+    `${c(e => e.sum.ath <= -.5)} of them 50% or more below the record`, '20%+ down, and most of at least 3 past falls this deep were higher a year on',
+    `${dnB} more had Downtrend but closed above their last swing high`];
+  $('screens').innerHTML = SCREENS.slice(1).map(([t, f], j) => { const k = c(f);
+    return `<button type="button" class="sc" data-i="${j + 1}" aria-pressed="false"><small>${t}</small><b>${k}</b><span class="pb"><i style="width:${(k / n * 100).toFixed(1)}%"></i></span><span>${why[j + 1]}</span></button>`; }).join('');
+}
+function watch() {
+  const M = L.filter(e => W.has(e.symbol));
+  $('watch').innerHTML = M.length ? M.map(e => `<a href="${href(e)}">${esc(e.name)} <span>${e.sum ? `${pc(Math.min(e.sum.ath, 0))} · ${sg(e.sum.day, 2)}` : '–'}</span></a>`).join('')
+    : '<p class="note">Star a market in the list below to keep it here. Saved in this browser only.</p>';
+  const b = $('groupChips').querySelector(`[data-g="${WATCH}"] span`); if (b) b.textContent = nW();
+}
+function looks(has) {
+  const day = e => Math.abs(e.sum.day) / (e.sum.vol / Math.sqrt(252)), x = v => Math.abs(v).toFixed(1) + 'x';
+  const turned = k => has.filter(e => tz(e) && tz(e).fromType === k && tz(e).since <= 14).sort((a, b) => tz(a).since - tz(b).since);
+  const C = [
+    ['Unusually low for them', has.filter(e => e.sum.vol > 0 && e.sum.ath < 0).sort((a, b) => a.sum.ath / a.sum.vol - b.sum.ath / b.sum.vol),
+      e => pc(e.sum.ath, 0), e => `${x(e.sum.ath / e.sum.vol)} its normal yearly swing · vol ${(e.sum.vol * 100).toFixed(0)}%`, e => e.sum.ath / e.sum.vol],
+    ['At or near their 10-year worst', has.filter(e => e.sum.dd10 < 0 && e.sum.ath <= e.sum.dd10 * .9).sort((a, b) => a.sum.ath - b.sum.ath),
+      e => pc(e.sum.ath, 0), e => `${e.sum.r10 == null ? 'Deepest since listing' : '10-year deepest'} ${pc(e.sum.dd10, 0)}`, e => e.sum.ath],
+    ['Running hot near the record', has.filter(e => e.sum.ath >= -.05 && e.sum.r1 != null && e.sum.vol > 0).sort((a, b) => b.sum.r1 / b.sum.vol - a.sum.r1 / a.sum.vol),
+      e => pc(e.sum.r1, 0), e => `1 year, ${x(e.sum.r1 / e.sum.vol)} its normal swing · ${pc(e.sum.ath)} from the record`, e => e.sum.r1 / e.sum.vol],
+    ['Unusual move on the day', has.filter(e => e.sum.vol > 0 && e.sum.day != null && e.sum.date === last).sort((a, b) => day(b) - day(a)),
+      e => pc(e.sum.day, 1), e => `${x(day(e))} a normal day`, e => Math.sign(e.sum.day) * day(e)],
+    ['Deep, but turning up', has.filter(e => e.sum.ath <= -.25 && tz(e) && tz(e).fromType === 'L').sort((a, b) => tz(b).move - tz(a).move),
+      e => pc(tz(e).move, 0), e => `${pc(e.sum.ath, 0)} from the record · ${tz(e).trend} at ${PAGE(e)}%`, e => tz(e).move],
+    ['Just turned down', turned('H'), e => pc(tz(e).move, 1), e => `from the high of ${dl(tz(e).from)} · ${len(tz(e).since)}`, e => tz(e).move, 1],
+    ['Just turned up', turned('L'), e => pc(tz(e).move, 1), e => `from the low of ${dl(tz(e).from)} · ${len(tz(e).since)}`, e => tz(e).move, 1],
+  ];
+  $('looks').innerHTML = C.map(([t, R, num, why, v, count]) => {
+    const top = R.slice(0, 5), m = Math.max(...top.map(e => Math.abs(v(e))), 1e-9);
+    return `<div class="lk"><h3>${t}${count ? `: ${R.length}` : ''}</h3>${top.length ? `<ol>${top.map(e => `<li><a href="${href(e)}">${esc(e.name)}</a><b>${num(e)}</b>` +
+      `<span class="pb"><i class="${v(e) >= 0 ? 'u' : 'd'}" style="width:${(Math.abs(v(e)) / m * 100).toFixed(1)}%"></i></span><small>${why(e)}</small></li>`).join('')}</ol>` : '<p class="note">None today</p>'}</div>`;
+  }).join('');
+}
+function bands(has) {
+  const B = BANDS.map((b, i) => has.filter(e => bandOf(e) === i)), mx = Math.max(...B.map(x => x.length), 1);
+  $('bands').innerHTML = B.map((G, i) => { const c = w => G.filter(e => first(e) === w).length, u = c('Uptrend'), m = c('Mixed'), d = c('Downtrend'), k = G.length || 1;
+    return `<button type="button" class="band" data-i="${i}" aria-pressed="false" aria-label="${BANDS[i][0]}: ${G.length} markets, ${u} up, ${m} mixed, ${d} down"><span>${BANDS[i][0]}</span>` +
+      `<span class="bar" style="width:${(G.length / mx * 100).toFixed(1)}%"><i class="u" style="width:${u / k * 100}%"></i><i class="m" style="width:${m / k * 100}%"></i><i class="d" style="width:${d / k * 100}%"></i></span><b>${G.length}</b></button>`; }).join('');
 }
 function groups() {
-  const out = ['<span class="hd">Group, size</span><span class="hd">Markets</span><span class="hd">Trend</span><span class="hd">Up · Mixed · Down</span>'];
+  const out = ['<span class="hd">Group, size</span><span class="hd">Markets</span><span class="hd">Trend</span>'];
   for (const g of new Set(L.map(e => e.group))) {
     const G = L.filter(e => e.group === g);
     for (const t of sizes(G[0])) {
@@ -253,26 +370,46 @@ function indices() {
 function start() {
   const N = window.SUMMARY || {};
   L = (window.INDEX || []).map(e => ({...e, sum: N[e.symbol]}));
-  if (!L.some(e => e.sum)) {
-    $('verdict').innerHTML = 'Nothing to show yet. In this folder run <code>python market_highs.py</code> (every market) or <code>python market_highs.py --summary-only</code> (only these numbers, from closes already downloaded), then reload.';
+  const has = L.filter(e => e.sum);
+  if (!has.length) {
+    $('lede').innerHTML = 'Nothing to show yet. In this folder run <code>python market_highs.py</code> (every market) or <code>python market_highs.py --summary-only</code> (only these numbers, from closes already downloaded), then reload.';
     return;
   }
-  const last = L.map(e => e.sum && e.sum.date).filter(Boolean).sort().at(-1);
-  $('asof').textContent = `Below the Record · closes up to ${dl(last)}`;
-  $('title').textContent = `${L.filter(e => e.sum).length} markets at a glance`;
-  $('verdict').textContent = 'Which markets are in an uptrend, which sit near their record, and which are deep in a fall that past falls recovered from. A starting list for a closer look on each market\'s own page.';
-  for (const g of new Set(L.map(e => e.group))) $('group').append(new Option(g, g));
-  $('screens').innerHTML = SCREENS.map(([t], i) => `<button type="button" data-i="${i}">${t}</button>`).join('');
-  $('screens').onclick = e => { const b = e.target.closest('button'); if (b) { screen = +b.dataset.i; table(); scatter(); } };
+  // The most common close date: one late crypto close or a few early Asian closes should not set it
+  const D = {}; has.forEach(e => D[e.sum.date] = (D[e.sum.date] || 0) + 1);
+  last = Object.keys(D).sort((a, b) => D[b] - D[a] || (a < b ? 1 : -1))[0];
+  const late = has.filter(e => e.sum.date > last);
+  $('asof').textContent = `Below the Record · closes up to ${dl(last)}${late.length === 1 ? ` · ${late[0].symbol} to ${dl(late[0].sum.date)}` : late.length ? ` · ${late.length} markets later` : ''}`;
+  $('title').textContent = `${has.length} markets: ${has.filter(upAll).length} in an uptrend at every size, ${has.filter(near).length} near their record, ${has.filter(deep).length} down 20% or more`;
+  const G = [...new Set(L.map(e => e.group))];
+  $('groupChips').innerHTML = [['', 'All groups', L.length], ...G.map(g => [g, g, L.filter(e => e.group === g).length]), [WATCH, '★ Watchlist', nW()]]
+    .map(([g, t, n]) => `<button type="button" data-g="${esc(g)}" aria-pressed="false">${esc(t)} <span>${n}</span></button>`).join('');
+  $('sorts').innerHTML = SORTS.map(([t], i) => `<button type="button" data-i="${i}">${t}</button>`).join('');
+  $('screens').onclick = e => { const b = e.target.closest('button'); if (b) { screen = +b.dataset.i === screen ? 0 : +b.dataset.i; refresh(); } };
+  $('bands').onclick = e => { const b = e.target.closest('button'); if (b) { band = +b.dataset.i === band ? -1 : +b.dataset.i; refresh(); } };
+  $('groupChips').onclick = e => { const b = e.target.closest('button'); if (b) { grp = b.dataset.g; refresh(); } };
+  $('sorts').onclick = e => { const b = e.target.closest('button'); if (b) { sortI = +b.dataset.i; shown = 40; list(); } };
+  $('clear').onclick = () => { screen = 0; band = -1; grp = ''; refresh(); $('q').focus(); };
+  $('view').onclick = () => { asTable = !asTable; $('view').textContent = asTable ? 'Show as cards' : 'Show as a table'; list(); };
+  $('more').onclick = () => { shown += 40; list(); };
+  // Star in the cards or the table; in the watchlist view the row goes, so focus moves to the next star
+  const star = e => {
+    const b = e.target.closest('.star'); if (!b) return false;
+    const s = b.dataset.s; W.has(s) ? W.delete(s) : W.add(s); save(); watch();
+    if (grp === WATCH) { list(); ($(asTable ? 'list' : 'rows').querySelector('.star') || $('q')).focus(); }
+    else { b.setAttribute('aria-pressed', W.has(s)); b.textContent = W.has(s) ? '★' : '☆'; }
+    return true;
+  };
+  $('rows').onclick = star;
   $('list').onclick = e => {
+    if (star(e)) return;
     const b = e.target.closest('th button'); if (!b) return;
-    const i = +b.dataset.i; dir = i === sortBy ? -dir : COLS[i].r ? -1 : 1; sortBy = i; table();
+    const i = +b.dataset.i; dir = i === sortBy ? -dir : COLS[i].r ? -1 : 1; sortBy = i; list();
     $('list').querySelector(`th button[data-i="${i}"]`).focus();
   };
   let wait;
-  $('group').onchange = () => { table(); scatter(); };
-  $('q').oninput = () => { clearTimeout(wait); wait = setTimeout(table, 150); };
-  tiles(); groups(); table(); scatter(); indices();
+  $('q').oninput = () => { clearTimeout(wait); wait = setTimeout(() => { shown = 40; list(); }, 150); };
+  screens(has); watch(); looks(has); bands(has); groups(); list(); scatter(); indices();
   $('scatter').on('plotly_click', ev => { const p = ev.points[0]; if (p) location.href = p.customdata; });
 }
 // The menu list, then the home page numbers (a file of its own, so market pages do not load it)
