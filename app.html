@@ -409,12 +409,8 @@ function menu(L) {
     }
     sel.append(og);
   }
-  // Arrow keys change a closed select in Chrome and Edge: only a mouse pick, Enter or Open leaves the page
   const go = () => sel.value && sel.value !== M && (location.href = 'app.html?m=' + sel.value);
-  let keyed = false;
-  sel.onkeydown = ev => ev.key === 'Enter' ? go() : keyed = true;
-  sel.onchange = () => keyed || go();
-  sel.onblur = sel.onmousedown = () => keyed = false;
+  sel.onchange = go;
   $('open').onclick = go;
 }
 // Over --serve only: the server builds one market, then the page reloads to show it
