@@ -1,4 +1,4 @@
-"""Swing map per market: turning points, distance from highs, past falls this deep, and a saved guess each day.
+"""Below the Record per market: turning points, distance from highs, past falls this deep, and a saved guess each day.
 
 Usage: python market_highs.py [TICKER ...]   (Yahoo symbols, default: every market in markets.csv)
        python market_highs.py --add SYMBOL "Name" [--group GROUP]   (adds it to markets.csv, group "Companies"
@@ -9,8 +9,8 @@ Usage: python market_highs.py [TICKER ...]   (Yahoo symbols, default: every mark
 Markets build in parallel, one process per CPU core; a failed market is printed and makes the exit code non-zero.
 Writes each market's data to data/<slug>.js, shown offline by the one page app.html?m=<slug>, plus highs_<slug>.html,
 a redirect to it for old links; today's numbers to market_highs.csv, and the day's guess to predictions/<slug>.json
-(older guesses kept and scored). data/index.js lists every market for the page's menu, with the last close of each built one, and the numbers
-the home page index.html shows.
+(older guesses kept and scored). data/index.js lists every market for the page's menu, with the last close of each built one;
+data/summary.js holds the numbers the home page index.html shows.
 Closes are kept in data/closes.csv, so a run only downloads the latest days.
 """
 import csv
@@ -61,6 +61,7 @@ FWD = 252  # trading days (about a year) followed after a past fall reached toda
 OUT = Path(__file__).parent
 STORE = OUT / "data" / "closes.csv"
 INDEX = OUT / "data" / "index.js"  # the menu: every market in markets.csv and whether it is built
+SUMMARY = OUT / "data" / "summary.js"  # the home page numbers per market; only index.html loads it
 PRED = OUT / "predictions"  # one file per market: every day's prediction, kept
 BACKFILL = 20  # on a market's first run, also make the last 20 days' guesses from the data each day had
 PICK = 8  # scenarios per guess: the past falls that reached today's depth at the most similar speed
@@ -156,14 +157,14 @@ def episodes(d, start):
     return df[df._end >= start].drop(columns="_end").reset_index(drop=True)
 
 
-def similar(d):
+def similar(d, every=None):
     """Past falls from an all-time high that went at least as deep as today's: how fast, how much further, what came next."""
     pct, now = d.pct_ATH, d.pct_ATH.iloc[-1]
     if now > -MIN_DIP:
         return None
     peak_now = d.prev_ath_date.iloc[-1]
     days_now = (d.index[-1] - peak_now).days
-    every = episodes(d, d.index[0])
+    every = episodes(d, d.index[0]) if every is None else every
     every = every[every.Status == "reversed"]
     eps = every[every["Depth %"] <= now * 100]
     rows = []
@@ -363,7 +364,7 @@ def swing_falls(c, th=BIG_FALL / 100):
     return out
 
 
-def page_data(t, d, eps, pages, name):
+def page_data(t, d, eps, pages, name, every, sim):
     start = d.index[-1] - pd.DateOffset(years=SHOW_YEARS + WARMUP_YEARS)
     w = d[d.index >= start]
     big = eps[(eps["Depth %"] <= -BIG_FALL) & (eps.Status == "reversed")]
@@ -378,9 +379,9 @@ def page_data(t, d, eps, pages, name):
         "fallsTable": eps[eps["Depth %"] <= -BIG_FALL][cols].iloc[::-1].to_html(index=False, border=0, na_rep="-"),
         "rank": [{"peak": str(e["Peak on"]), "low": str(e["Low on"]), "depth": float(e["Depth %"]), "now": e.Status != "reversed",
                   "back": None if e.Status != "reversed" else str(e["Back at high"])}
-                 for _, e in episodes(d, d.index[0]).iterrows() if e["Depth %"] <= -BIG_FALL or e.Status != "reversed"],
+                 for _, e in every.iterrows() if e["Depth %"] <= -BIG_FALL or e.Status != "reversed"],
         "rankSwing": swing_falls(d.close),
-        "dailyTable": daily_table(d), "highsLows": highs_lows(d), "facts": facts(d, eps), "similar": similar(d), "track": track(name, d), "backtest": backtest(d),
+        "dailyTable": daily_table(d), "highsLows": highs_lows(d), "facts": facts(d, eps), "similar": sim, "track": track(name, d), "backtest": backtest(d),
     }
 
 
@@ -416,12 +417,16 @@ def trend(c, prev_max, t):
     h_up, l_up = h in ("HH", "ATH"), l == "HL"
     i, k = piv[-1]
     return {"trend": "Uptrend" if h_up and l_up else "Downtrend" if not (h_up or l_up) else "Mixed", "high": h, "low": l,
-            "belowLow": last["L"] is not None and c[-1] < c[last["L"]], "rising": up,
-            "move": round(c[-1] / c[i] - 1, 4), "from": i, "fromType": k}
+            "belowLow": last["L"] is not None and c[-1] < c[last["L"]],
+            "aboveHigh": last["H"] is not None and c[-1] > c[last["H"]], "rising": up,
+            "move": round(c[-1] / c[i] - 1, 4), "from": i, "fromType": k,
+            # The last two finished swings, oldest first: start, end and move
+            "legs": [(a, b, round(c[b] / c[a] - 1, 4)) for (a, _), (b, _) in zip(piv[-3:-1], piv[-2:])]}
 
 
-def overview(d):
-    """A few numbers per market for the home page, from the same closes the market page uses."""
+def overview(d, every=None, s=None):
+    """A few numbers per market for the home page, from the same closes the market page uses. `every` and `s` are
+    episodes() over the whole history and similar(), when the caller has them already."""
     day = d.index[-1]
     start = day - pd.DateOffset(years=SHOW_YEARS + WARMUP_YEARS)
     w = d[d.index >= start]
@@ -430,28 +435,31 @@ def overview(d):
     for x in c:
         prev_max.append(m)
         m = max(m, x)
+    rec = day if d.pct_ATH.iloc[-1] >= 0 else d.prev_ath_date.iloc[-1]  # prev_ath_date is the record before today's
+    moves = np.log(d.close).diff()[d.index > day - pd.DateOffset(years=1)].dropna()  # crypto trades every day: ~365 moves
     out = {"date": str(day.date()), "close": c[-1], "day": round(c[-1] / c[-2] - 1, 4) if len(c) > 1 else None,
-           "ath": round(float(d.pct_ATH.iloc[-1]), 4), "athDate": str(d.prev_ath_date.iloc[-1].date()),
-           "athDays": (day - d.prev_ath_date.iloc[-1]).days,
-           "vol": round(float(np.log(d.close).diff().iloc[-252:].std() * math.sqrt(252)), 4)}
+           "ath": round(float(d.pct_ATH.iloc[-1]), 4), "athDate": str(rec.date()), "athDays": (day - rec).days,
+           "vol": round(float(moves.std() * math.sqrt(len(moves))), 4) if len(moves) > 1 else None}
     for y in (1, 5, 10):
         then = day - pd.DateOffset(years=y)
         past = d.close[d.index <= then]
         out[f"r{y}"] = round(float((d.close.iloc[-1] / past.iloc[-1]) ** (1 / y) - 1), 4) if len(past) else None  # 5y and 10y: per year
         if y > 1:
-            out[f"dd{y}"] = round(min(float(d.pct_ATH[d.index > then].min()), 0), 4) if len(past) else None
+            out[f"dd{y}"] = round(min(float(d.pct_ATH[d.index > then].min()), 0), 4)  # shorter history: since listing
     out["tr"] = {}
     for t in TREND_SIZES:
         z = trend(c, prev_max, t / 100)
         if z:
-            out["tr"][t] = {**z, "from": str(w.index[z["from"]].date())}
+            out["tr"][t] = {**z, "from": str(w.index[z["from"]].date()), "since": (day - w.index[z["from"]]).days,
+                            "legs": [{"move": m, "from": str(w.index[a].date()), "to": str(w.index[b].date()), "days": (w.index[b] - w.index[a]).days}
+                                     for a, b, m in z["legs"]]}
     # As the page's "Below the record" tile: past 10%+ falls from a record in 10 years, and how many went deeper than today
     y10 = str((day - pd.DateOffset(years=10)).date())
-    eps = episodes(d, d.index[0])
+    eps = episodes(d, d.index[0]) if every is None else every
     past = eps[(eps.Status == "reversed") & (eps["Depth %"] <= -BIG_FALL) & (eps["Peak on"].astype(str) >= y10)]
     out["falls"], out["deeper"] = len(past), int((past["Depth %"] < round(float(d.pct_ATH.iloc[-1]), 5) * 100).sum())
     # As the page's "Higher a year later" tile: past falls that got this deep, and how many were higher a year on
-    s = similar(d)
+    s = similar(d, eps) if s is None else s
     yrs = [x["fwd"][FWD] for x in s["scen"][0]["cases"] if len(x["fwd"]) > FWD] if s and s["rows"] else []
     out["yrUp"], out["yrN"] = sum(v > 0 for v in yrs), len(yrs)
     return out
@@ -463,15 +471,17 @@ def build(t, d, slug):
     start = d.index[-1] - pd.DateOffset(years=SHOW_YEARS)
     # Every market in the menu, also those not rebuilt in this run
     pages = [{"name": n, "href": f"app.html?m={slug[o]}", "here": o == t, "group": g} for g, m in GROUPS.items() for o, n in m.items()]
-    payload = json.dumps(page_data(t, d, episodes(d, start), pages, slug[t])).replace("</", "<\\/")
+    every = episodes(d, d.index[0])
+    sim = similar(d, every)
+    payload = json.dumps(page_data(t, d, episodes(d, start), pages, slug[t], every, sim)).replace("</", "<\\/")
     (OUT / "data" / f"{slug[t]}.js").write_text(f"window.D = {payload};\n", encoding="utf-8")
     # Old links, bookmarks and the scheduled task's file names keep working
-    url, title = f"app.html?m={slug[t]}", escape(f"Swing map: {NAMES.get(t, t)}")
+    url, title = f"app.html?m={slug[t]}", escape(f"Below the Record: {NAMES.get(t, t)}")
     (OUT / f"highs_{slug[t]}.html").write_text(
         f'<!doctype html>\n<meta charset="utf-8">\n<title>{title}</title>\n'
         f'<meta http-equiv="refresh" content="0; url={url}">\n<a href="{url}">{title}</a>\n', encoding="utf-8")
     return {"index": NAMES.get(t, t), "date": d.index[-1].date(), "close": round(d.close.iloc[-1], 2),
-            "vs ATH %": round(d.pct_ATH.iloc[-1] * 100, 2), "ATH set on": d.prev_ath_date.iloc[-1].date()}, overview(d)
+            "vs ATH %": round(d.pct_ATH.iloc[-1] * 100, 2), "ATH set on": d.prev_ath_date.iloc[-1].date()}, overview(d, every, sim)
 
 
 def file_date(f):
@@ -485,8 +495,8 @@ def file_date(f):
 def write_index(slug, done, sums):
     """data/index.js for the menu: every market in markets.csv; a built one (its data file exists) has its last close
     and build time. Markets not rebuilt in this run keep their entry while their file is unchanged; a file written since
-    (another run, another folder) gets its date from the file itself. "sum" holds the home page numbers; a market
-    without new ones keeps its old ones."""
+    (another run, another folder) gets its date from the file itself. The home page numbers go to data/summary.js, so the
+    market page does not load them; a market without new ones keeps its old ones."""
     try:
         old = json.loads(INDEX.read_text(encoding="utf-8").removeprefix("window.INDEX = ").rstrip().rstrip(";"))
     except (OSError, ValueError):  # missing, or cut short by a crashed write: rebuild it from the files
@@ -504,11 +514,20 @@ def write_index(slug, done, sums):
                 date, built = e["date"], e["built"]
             else:
                 date, built = file_date(f), datetime.fromtimestamp(mtime).isoformat(timespec="seconds")
-            rows.append({"symbol": t, "slug": slug[t], "name": n, "group": g, "date": date, "built": built, "mtime": mtime,
-                         "sum": sums.get(t) or e.get("sum")})
-    tmp = INDEX.with_suffix(".js.tmp")  # replaced in one step, so the page or another run never reads half a file
-    tmp.write_text("window.INDEX = [\n" + ",\n".join(map(json.dumps, rows)) + "\n];\n", encoding="utf-8")
-    os.replace(tmp, INDEX)
+            rows.append({"symbol": t, "slug": slug[t], "name": n, "group": g, "date": date, "built": built, "mtime": mtime})
+    write_js(INDEX, "window.INDEX = [\n" + ",\n".join(map(json.dumps, rows)) + "\n];\n")
+    try:
+        old = json.loads(SUMMARY.read_text(encoding="utf-8").removeprefix("window.SUMMARY = ").rstrip().rstrip(";"))
+    except (OSError, ValueError):
+        old = {}
+    keep = {t: sums.get(t) or old.get(t) for t in NAMES if sums.get(t) or old.get(t)}
+    write_js(SUMMARY, "window.SUMMARY = {\n" + ",\n".join(f"{json.dumps(t)}: {json.dumps(v)}" for t, v in keep.items()) + "\n};\n")
+
+
+def write_js(f, text):
+    tmp = f.with_suffix(".js.tmp")  # replaced in one step, so the page or another run never reads half a file
+    tmp.write_text(text, encoding="utf-8")
+    os.replace(tmp, f)
 
 
 def serve(port):
@@ -588,6 +607,8 @@ def summary_only():
         sums = dict(zip(data, pool.map(overview, data.values(), chunksize=8)))
     write_index(slugs(NAMES), {}, sums)
     print(f"Home page numbers for {len(sums)} markets.")
+    if skipped := [t for t in NAMES if t not in data]:
+        print(f"No closes in {STORE.name}, skipped: {' '.join(skipped)}")
 
 
 def main():

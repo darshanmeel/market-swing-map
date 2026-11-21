@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Swing map</title>
+<title>Below the Record</title>
 <script src="plotly.min.js"></script>
 <style>
 :root{--ground:#F6F6F3;--card:#fff;--ink:#15181D;--ink2:#4A505C;--muted:#5A6170;--faint:#8A919C;--line:#E3E5E8;--line2:#EEF0F2;--chip:#D5D8DD;
@@ -445,7 +445,7 @@ async function build(sym, btn, out) {
   btn.focus();
 }
 function missing() {
-  document.title = 'Swing map: not built yet';
+  document.title = 'Below the Record: not built yet';
   const e = here(), box = document.createElement('section'), main = document.querySelector('main');
   box.className = 'card build';
   if (!window.INDEX) {  // a fresh clone: data/ is not in git
@@ -490,7 +490,7 @@ const market = () => /^[a-z0-9_.-]+$/.test(M) ? load(`data/${M}.js`, () => windo
 load('data/index.js', () => { menu(window.INDEX || []); market(); }, market);
 
 function page(D) {
-document.title = `Swing map: ${D.name}`;
+document.title = `Below the Record: ${D.name}`;
 const SIZES = [0.03, 0.05, 0.08, 0.10, 0.15, 0.20], YEARS = [1, 3, 5, 10];
 let size = 0.05, years = 5;
 const C = D.close, N = C.length, dates = D.dates;
@@ -1286,8 +1286,10 @@ $('sizes').insertAdjacentHTML('beforeend', SIZES.map(v => btn(v, Math.round(v * 
 $('years').insertAdjacentHTML('beforeend', YEARS.map(v => btn(v, v + 'Y')).join(''));
 $('sizes').onclick = e => { if (e.target.dataset.v) { size = +e.target.dataset.v; render(); } };
 $('years').onclick = e => { if (e.target.dataset.v) { years = +e.target.dataset.v; render(); } };
-// Default reversal: 8% for indices; companies, commodities and crypto swing more, so 15%
-size = (here() || D.pages?.find(p => p.here))?.group === 'Indices' ? 0.08 : 0.15;
+// Reversal from ?r= (the home page passes the size its row was read at); else 8% for indices,
+// and 15% for companies, commodities and crypto, which swing more
+const askR = +new URLSearchParams(location.search).get('r') / 100;
+size = SIZES.includes(askR) ? askR : (here() || D.pages?.find(p => p.here))?.group === 'Indices' ? 0.08 : 0.15;
 render();
 // Section pills: hide the ones whose section is hidden
 if (['trackSub', 'testSub', 'btSub'].every(id => $(id).hidden)) $('trust').hidden = true;

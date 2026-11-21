@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Swing map: every market at a glance</title>
+<title>Below the Record: every market at a glance</title>
 <script src="plotly.min.js"></script>
 <style>
 :root{--ground:#F6F6F3;--card:#fff;--ink:#15181D;--ink2:#4A505C;--muted:#5A6170;--faint:#8A919C;--line:#E3E5E8;--line2:#EEF0F2;--chip:#D5D8DD;
@@ -62,7 +62,7 @@ td small{display:block;color:var(--muted);font-size:12px}
 <body>
 <main>
   <header>
-    <div class="kicker" id="asof">Swing map</div>
+    <div class="kicker" id="asof">Below the Record</div>
     <h1 id="title">Every market at a glance</h1>
     <p class="verdict" id="verdict"></p>
     <p class="note"><b>History, not a forecast or advice.</b> These screens only sort markets by what their prices did; open a market for its swings, past falls and what came next. <a href="readme.html#home">How this page works</a></p>
@@ -79,7 +79,7 @@ td small{display:block;color:var(--muted);font-size:12px}
 
   <section class="card" aria-labelledby="mapH">
     <h2 id="mapH">Below the record against the 5-year return</h2>
-    <p class="note">Each dot is one market in the table below (filters and screens apply). Right: close to its record; up: strong 5 years. Colour and shape give the trend at the market's first reversal size. Click a dot to open the market.</p>
+    <p class="note">One dot per market in the chosen group and screen (the search does not apply). Right: close to its record; up: strong 5 years. Colour and shape give the trend at the market's first reversal size. Click a dot to open the market. <span id="mapNote"></span></p>
     <div id="scatter" role="img" aria-label="Scatter of every market in the table: percent below the record close against the 5-year return per year, by trend"></div>
   </section>
 
@@ -123,18 +123,21 @@ function fresh(date) {
   return n <= 1 ? 0 : n <= 5 ? 1 : 2;
 }
 // The reversal sizes each group is read at; the first one colours the scatter
-const SIZES = {'Indices': [8], 'Commodities and crypto': [10]}, sizes = e => SIZES[e.group] || [10, 15];
+const SIZES = {'Indices': [8], 'Commodities and crypto': [15]}, sizes = e => SIZES[e.group] || [10, 15];
 const SHORT = {Uptrend: 'Up', Downtrend: 'Down', Mixed: 'Mixed'};
 const trendAt = (e, t) => e.sum && e.sum.tr[t] ? e.sum.tr[t].trend : null;
 const every = (e, w) => sizes(e).every(t => trendAt(e, t) === w);
+// An uptrend whose close is already below its last swing low (a downtrend above its last high) is about to turn: left out
+const broken = (e, k) => sizes(e).some(t => e.sum.tr[t] && e.sum.tr[t][k]);
+const upAll = e => every(e, 'Uptrend') && !broken(e, 'belowLow'), dnAll = e => every(e, 'Downtrend') && !broken(e, 'aboveHigh');
 const near = e => e.sum && e.sum.ath >= -.05, deep = e => e.sum && e.sum.ath <= -.2;
 const deepBack = e => deep(e) && e.sum.yrN >= 3 && e.sum.yrUp * 2 > e.sum.yrN;
 const SCREENS = [
   ['All', () => true, ''],
-  ['Uptrend at both sizes', e => every(e, 'Uptrend'), 'Uptrend at 10% and at 15% (indices at 8%, commodities and crypto at 10%).'],
+  ['Uptrend at every size read', upAll, 'Uptrend at 10% and at 15% (indices at 8%, commodities and crypto at 10%), and the last close is not below the last swing low.'],
   ['Near the record (within 5%)', near, 'The last close is at most 5% below the highest close ever.'],
-  ['Deep fall (20%+), past falls this deep mostly higher a year later', deepBack, 'At least 20% below the record, and of at least 3 past falls that got this deep, more than half were higher a year after.'],
-  ['Downtrend at both sizes', e => every(e, 'Downtrend'), 'Downtrend at 10% and at 15% (indices at 8%, commodities and crypto at 10%).'],
+  ['Deep fall (20%+) where most past falls this deep were higher a year later', deepBack, 'At least 20% below the record, and of at least 3 past falls that got this deep, more than half were higher a year after.'],
+  ['Downtrend at every size read', dnAll, 'Downtrend at 10% and at 15% (indices at 8%, commodities and crypto at 10%), and the last close is not above the last swing high.'],
 ];
 
 function trendCell(e) {
@@ -143,32 +146,46 @@ function trendCell(e) {
     const z = e.sum.tr[t];
     if (!z) return `<span class="t">${t}%: –</span>`;
     const how = `${z.rising ? 'rising' : 'falling'} ${pc(z.move, 0)} since the ${dl(z.from)} ${z.fromType === 'H' ? 'high' : 'low'}`;
-    return `<span class="t ${z.trend}" title="At ${t}% reversals: last high ${z.high || '–'}, last low ${z.low || '–'}${z.belowLow ? ', now below that low' : ''}; ${how}">${t}%: ${SHORT[z.trend]}</span><small>${how}</small>`;
+    const warn = z.belowLow ? ' · <b>below last low</b>' : z.aboveHigh ? ' · <b>above last high</b>' : '';
+    return `<span class="t ${z.trend}" title="At ${t}% reversals: last high ${z.high || '–'}, last low ${z.low || '–'}; ${how}">${t}%: ${SHORT[z.trend]}</span><small>${how}${warn}</small>`;
   }).join('');
 }
 const score = e => e.sum ? sizes(e).reduce((s, t) => s + ({Uptrend: 1, Mixed: 0, Downtrend: -1}[trendAt(e, t)] ?? 0), 0) / sizes(e).length : null;
 const S = e => e.sum || {};
+// The swings at the size the market's own page opens with: 8% for indices, 15% for the rest
+const PAGE = e => e.group === 'Indices' ? 8 : 15, tz = e => e.sum && e.sum.tr[PAGE(e)];
+const len = d => d < 60 ? `${d} day${d === 1 ? '' : 's'}` : d < 730 ? `${Math.round(d / 30.44)} months` : `${(d / 365.25).toFixed(1)} years`;
+const leg = (e, k) => { const z = tz(e); return z && z.legs && z.legs.length >= k ? z.legs[z.legs.length - k] : null; };
+const legCell = (e, k) => { const g = leg(e, k);
+  return g ? `${g.move > 0 ? 'Rise' : 'Fall'} ${sg(g.move)}<small>in ${len(g.days)}, to ${dl(g.to)}</small>` : '–'; };
+const href = e => `app.html?m=${encodeURIComponent(e.slug)}&r=${sizes(e)[0]}`;
+// Deepest fall: over the whole history when it is shorter than the window (no 5- or 10-year return then)
+const dd = (e, y) => S(e)[`dd${y}`] == null ? '–' : pc(S(e)[`dd${y}`], 0) + (S(e)[`r${y}`] == null ? '<small>since listing</small>' : '');
 const COLS = [
   {k: 'Market', v: e => e.name, c: e => {
     const f = e.built && e.date ? fresh(e.date) : null;
-    return `<span class="${f === null ? 'off' : 'f' + f}" title="${f === null ? 'Not built yet' : 'Last close ' + dl(e.date)}">${f === null ? '—' : MARK[f]}</span> <a href="app.html?m=${encodeURIComponent(e.slug)}">${esc(e.name)}</a><small>${esc(e.symbol)} · ${esc(e.group)}</small>`; }},
+    return `<span class="${f === null ? 'off' : 'f' + f}" title="${f === null ? 'Not built yet' : 'Last close ' + dl(e.date)}">${f === null ? '—' : MARK[f]}</span> <a href="${href(e)}">${esc(e.name)}</a><small>${esc(e.symbol)} · ${esc(e.group)}</small>`; }},
   {k: 'Trend', v: score, c: trendCell},
+  {k: 'Now, since the last turn', r: 1, v: e => tz(e) ? tz(e).move : null, c: e => { const z = tz(e);
+    return z ? `${sg(z.move)}<small>${len(z.since)} since the ${dl(z.from)} ${z.fromType === 'H' ? 'high' : 'low'}, at ${PAGE(e)}%</small>` : '–'; }},
+  {k: 'Swing before', r: 1, v: e => leg(e, 1)?.move ?? null, c: e => legCell(e, 1)},
+  {k: 'Swing before that', r: 1, v: e => leg(e, 2)?.move ?? null, c: e => legCell(e, 2)},
   {k: 'Below the record', r: 1, v: e => S(e).ath, c: e => e.sum ? `${pc(Math.min(e.sum.ath, 0))}<small>${e.sum.ath >= 0 ? 'record close' : dl(e.sum.athDate)}</small>` : '–'},
   {k: 'Days since record', r: 1, v: e => S(e).athDays, c: e => e.sum ? e.sum.athDays.toLocaleString('en-US') : '–'},
   {k: 'Last close', r: 1, v: e => S(e).close, c: e => e.sum ? `${e.sum.close.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}<small>${sg(e.sum.day, 2)} on the day</small>` : '–'},
   {k: '1 year', r: 1, v: e => S(e).r1, c: e => sg(S(e).r1)},
   {k: '5 years, per year', r: 1, v: e => S(e).r5, c: e => sg(S(e).r5)},
   {k: '10 years, per year', r: 1, v: e => S(e).r10, c: e => sg(S(e).r10)},
-  {k: 'Deepest below record, 5y', r: 1, v: e => S(e).dd5, c: e => pc(S(e).dd5, 0)},
-  {k: 'Deepest below record, 10y', r: 1, v: e => S(e).dd10, c: e => pc(S(e).dd10, 0)},
-  {k: 'Volatility, 1 year', r: 1, v: e => S(e).vol, c: e => e.sum ? (e.sum.vol * 100).toFixed(0) + '%' : '–'},
+  {k: 'Deepest below record, 5y', r: 1, v: e => S(e).dd5, c: e => dd(e, 5)},
+  {k: 'Deepest below record, 10y', r: 1, v: e => S(e).dd10, c: e => dd(e, 10)},
+  {k: 'Volatility, 1 year', r: 1, v: e => S(e).vol, c: e => S(e).vol != null ? (e.sum.vol * 100).toFixed(0) + '%' : '–'},
   {k: 'Past 10%+ falls deeper', r: 1, v: e => e.sum && e.sum.falls ? e.sum.deeper / e.sum.falls : null, c: e => e.sum ? `${e.sum.deeper} of ${e.sum.falls}` : '–'},
   {k: 'Higher a year later', r: 1, v: e => e.sum && e.sum.yrN ? e.sum.yrUp / e.sum.yrN : null, c: e => e.sum && e.sum.yrN ? `${e.sum.yrUp} of ${e.sum.yrN}` : '–'},
 ];
-let L = [], screen = 0, sortBy = 2, dir = -1;  // nearest the record first
+let L = [], screen = 0, sortBy = 5, dir = -1;  // nearest the record first
 
-function rows() {
-  const g = $('group').value, q = $('q').value.trim().toLowerCase(), col = COLS[sortBy];
+function rows(q = $('q').value.trim().toLowerCase()) {
+  const g = $('group').value, col = COLS[sortBy];
   return L.filter(e => (!g || e.group === g) && (!q || e.name.toLowerCase().includes(q) || e.symbol.toLowerCase().includes(q)) && SCREENS[screen][1](e))
     .sort((a, b) => { const x = col.v(a), y = col.v(b); return x == null ? 1 : y == null ? -1 : (x < y ? -1 : x > y ? 1 : 0) * dir; });
 }
@@ -179,13 +196,14 @@ function table() {
   $('count').textContent = `Showing ${R.length} of ${L.length} markets.`;
   [...$('screens').children].forEach((b, i) => b.setAttribute('aria-pressed', i === screen));
   $('screenNote').textContent = SCREENS[screen][2];
-  scatter(R);
 }
-function scatter(R) {
-  const P = R.filter(e => e.sum && e.sum.r5 != null), first = e => trendAt(e, sizes(e)[0]);
+function scatter() {
+  const R = rows(''), first = e => trendAt(e, sizes(e)[0]), P = R.filter(e => e.sum && e.sum.r5 != null && first(e));
+  const short = R.filter(e => e.sum && e.sum.r5 == null).length, flat = R.length - P.length - short;
+  $('mapNote').textContent = `${P.length} of ${R.length} shown; ${short} without 5 years of history${flat ? `, ${flat} without a trend at their reversal size` : ''}.`;
   const T = [['Uptrend', css('--rise'), 'circle'], ['Mixed', '#8A919C', 'square'], ['Downtrend', css('--fall'), 'triangle-down']].map(([w, color, symbol]) => {
     const Q = P.filter(e => first(e) === w);
-    return {name: w, type: 'scatter', mode: 'markers', x: Q.map(e => Math.min(e.sum.ath, 0) * 100), y: Q.map(e => e.sum.r5 * 100), customdata: Q.map(e => e.slug),
+    return {name: w, type: 'scatter', mode: 'markers', x: Q.map(e => Math.min(e.sum.ath, 0) * 100), y: Q.map(e => e.sum.r5 * 100), customdata: Q.map(href),
       text: Q.map(e => `<b>${esc(e.name)}</b> (${esc(e.symbol)})<br>${pc(Math.min(e.sum.ath, 0))} below the record<br>${pc(e.sum.r5)} a year over 5 years<br>${w} at ${sizes(e)[0]}%`),
       hovertemplate: '%{text}<extra></extra>', marker: {color, symbol, size: 8, opacity: .8, line: {color: '#fff', width: .6}}};
   });
@@ -196,14 +214,15 @@ function scatter(R) {
     hoverlabel: {bgcolor: '#15181D', font: {color: '#fff'}}}, {responsive: true, displayModeBar: false});
 }
 function tiles() {
-  const has = L.filter(e => e.sum), n = has.length, up = has.filter(e => every(e, 'Uptrend')).length, dn = has.filter(e => every(e, 'Downtrend')).length;
+  const has = L.filter(e => e.sum), n = has.length, up = has.filter(upAll).length, dn = has.filter(dnAll).length;
+  const upB = has.filter(e => every(e, 'Uptrend')).length - up, dnB = has.filter(e => every(e, 'Downtrend')).length - dn;
   const tile = (label, value, note) => `<div class="tile"><small>${label}</small><b>${value}</b><p>${note}</p></div>`;
   $('tiles').innerHTML =
     tile('Markets', n, `with numbers, of ${L.length} in the list${L.length - n ? `; ${L.length - n} without numbers yet` : ''}`) +
-    tile('Uptrend at both sizes', up, `${dn} in a downtrend at both; ${n - up - dn} mixed or split between sizes`) +
+    tile('Uptrend at every size read', up, `${dn} in a downtrend at every size; ${upB} more read Uptrend but closed below the last low, ${dnB} read Downtrend but closed above the last high`) +
     tile('At or near the record', has.filter(near).length, `within 5% of the highest close ever; ${has.filter(e => e.sum.ath >= 0).length} closed at a record`) +
     tile('In a fall of 20%+', has.filter(deep).length, `${has.filter(e => e.sum.ath <= -.5).length} of them 50% or more below the record`) +
-    tile('Deep fall, mostly higher before', has.filter(deepBack).length, 'past falls this deep were more often higher a year later than lower');
+    tile('Deep fall where most past falls this deep were higher a year later', has.filter(deepBack).length, '20%+ below the record (at least 3 past falls)');
 }
 function groups() {
   const out = ['<span class="hd">Group, size</span><span class="hd">Markets</span><span class="hd">Trend</span><span class="hd">Up · Mixed · Down</span>'];
@@ -221,8 +240,8 @@ function groups() {
 function indices() {
   const I = L.filter(e => e.group === 'Indices' && e.sum);
   $('idx').innerHTML = '<thead><tr><th>Index</th><th>Trend at 8%</th><th class="r">5y, per year</th><th class="r">10y, per year</th><th class="r">Deepest, 5y</th><th class="r">Deepest, 10y</th></tr></thead><tbody>' +
-    I.map(e => `<tr><td><a href="app.html?m=${encodeURIComponent(e.slug)}">${esc(e.name)}</a><small>${pc(Math.min(e.sum.ath, 0))} below the record</small></td><td>${trendCell(e)}</td>` +
-      `<td class="r num">${sg(e.sum.r5)}</td><td class="r num">${sg(e.sum.r10)}</td><td class="r num">${pc(e.sum.dd5, 0)}</td><td class="r num">${pc(e.sum.dd10, 0)}</td></tr>`).join('') + '</tbody>';
+    I.map(e => `<tr><td><a href="${href(e)}">${esc(e.name)}</a><small>${pc(Math.min(e.sum.ath, 0))} below the record</small></td><td>${trendCell(e)}</td>` +
+      `<td class="r num">${sg(e.sum.r5)}</td><td class="r num">${sg(e.sum.r10)}</td><td class="r num">${dd(e, 5)}</td><td class="r num">${dd(e, 10)}</td></tr>`).join('') + '</tbody>';
   const y = I.map(e => e.name);
   Plotly.react('idxChart', [['5 years', 'r5', '#8DB0F0'], ['10 years', 'r10', css('--rise')]].map(([name, k, color]) =>
     ({type: 'bar', orientation: 'h', name, y, x: I.map(e => e.sum[k] == null ? null : e.sum[k] * 100), marker: {color}, hovertemplate: `%{y}: %{x:.1f}% a year over ${name}<extra></extra>`})),
@@ -232,30 +251,33 @@ function indices() {
 }
 
 function start() {
-  L = window.INDEX || [];
+  const N = window.SUMMARY || {};
+  L = (window.INDEX || []).map(e => ({...e, sum: N[e.symbol]}));
   if (!L.some(e => e.sum)) {
     $('verdict').innerHTML = 'Nothing to show yet. In this folder run <code>python market_highs.py</code> (every market) or <code>python market_highs.py --summary-only</code> (only these numbers, from closes already downloaded), then reload.';
     return;
   }
   const last = L.map(e => e.sum && e.sum.date).filter(Boolean).sort().at(-1);
-  $('asof').textContent = `Swing map · closes up to ${dl(last)}`;
+  $('asof').textContent = `Below the Record · closes up to ${dl(last)}`;
   $('title').textContent = `${L.filter(e => e.sum).length} markets at a glance`;
   $('verdict').textContent = 'Which markets are in an uptrend, which sit near their record, and which are deep in a fall that past falls recovered from. A starting list for a closer look on each market\'s own page.';
   for (const g of new Set(L.map(e => e.group))) $('group').append(new Option(g, g));
   $('screens').innerHTML = SCREENS.map(([t], i) => `<button type="button" data-i="${i}">${t}</button>`).join('');
-  $('screens').onclick = e => { const b = e.target.closest('button'); if (b) { screen = +b.dataset.i; table(); } };
+  $('screens').onclick = e => { const b = e.target.closest('button'); if (b) { screen = +b.dataset.i; table(); scatter(); } };
   $('list').onclick = e => {
     const b = e.target.closest('th button'); if (!b) return;
     const i = +b.dataset.i; dir = i === sortBy ? -dir : COLS[i].r ? -1 : 1; sortBy = i; table();
     $('list').querySelector(`th button[data-i="${i}"]`).focus();
   };
-  $('group').onchange = table; $('q').oninput = table;
-  tiles(); groups(); table(); indices();
-  $('scatter').on('plotly_click', ev => { const p = ev.points[0]; if (p) location.href = 'app.html?m=' + encodeURIComponent(p.customdata); });
+  let wait;
+  $('group').onchange = () => { table(); scatter(); };
+  $('q').oninput = () => { clearTimeout(wait); wait = setTimeout(table, 150); };
+  tiles(); groups(); table(); scatter(); indices();
+  $('scatter').on('plotly_click', ev => { const p = ev.points[0]; if (p) location.href = p.customdata; });
 }
-const s = document.createElement('script');
-s.src = 'data/index.js'; s.onload = start; s.onerror = start;
-document.head.append(s);
+// The menu list, then the home page numbers (a file of its own, so market pages do not load it)
+function load(src, done) { const s = document.createElement('script'); s.src = src; s.onload = s.onerror = done; document.head.append(s); }
+load('data/index.js', () => load('data/summary.js', start));
 </script>
 </body>
 </html>
