@@ -3,10 +3,12 @@
 Usage: python market_highs.py [TICKER ...]   (Yahoo symbols, default: every market in markets.csv)
        python market_highs.py --add SYMBOL "Name" [--group GROUP]   (adds it to markets.csv, group "Companies"
        unless given, then builds it; a symbol Yahoo has no data for is not added)
+       python market_highs.py --serve [PORT]   (serves this folder on http://127.0.0.1:PORT, default 8765, so app.html
+       can build a market with its "Build now" button)
 Markets build in parallel, one process per CPU core; a failed market is printed and makes the exit code non-zero.
 Writes each market's data to data/<slug>.js, shown offline by the one page app.html?m=<slug>, plus highs_<slug>.html,
 a redirect to it for old links; today's numbers to market_highs.csv, and the day's guess to predictions/<slug>.json
-(older guesses kept and scored).
+(older guesses kept and scored). data/index.js lists every market for the page's menu, with the last close of each built one.
 Closes are kept in data/closes.csv, so a run only downloads the latest days.
 """
 import csv
@@ -14,11 +16,17 @@ import json
 import math
 import os
 import re
+import subprocess
 import sys
+import threading
 import traceback
 from concurrent.futures import ProcessPoolExecutor
+from datetime import datetime
+from functools import partial
+from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from html import escape
 from pathlib import Path
+from urllib.parse import parse_qs, urlsplit
 
 import numpy as np
 import pandas as pd
@@ -50,6 +58,7 @@ WINDOWS = {"1-year": "365D", "6-month": "182D"}
 FWD = 252  # trading days (about a year) followed after a past fall reached today's depth
 OUT = Path(__file__).parent
 STORE = OUT / "data" / "closes.csv"
+INDEX = OUT / "data" / "index.js"  # the menu: every market in markets.csv and whether it is built
 PRED = OUT / "predictions"  # one file per market: every day's prediction, kept
 BACKFILL = 20  # on a market's first run, also make the last 20 days' guesses from the data each day had
 PICK = 8  # scenarios per guess: the past falls that reached today's depth at the most similar speed
@@ -176,7 +185,7 @@ def next_year(d, eps, depth):
     out = []
     for _, e in eps[eps["Depth %"] <= depth * 100].iterrows():
         after = d.pct_ATH[d.index > pd.Timestamp(e["Peak on"])]
-        hit = after[after <= depth].index[0]
+        hit = after[after <= max(depth, after.min())].index[0]  # "Depth %" is rounded, so the low may miss depth by a hair
         fwd = d.close[d.index >= hit].iloc[:FWD + 1]
         out.append({"peak": str(e["Peak on"]), "hit": str(hit.date()), "fwd": [round(float(v / fwd.iloc[0] - 1), 4) for v in fwd]})
     return out
@@ -388,6 +397,94 @@ def build(t, d, slug):
             "vs ATH %": round(d.pct_ATH.iloc[-1] * 100, 2), "ATH set on": d.prev_ath_date.iloc[-1].date()}
 
 
+def file_date(f):
+    """The last close a data file holds: the last entry of its "dates" list, read without parsing the whole payload."""
+    s = f.read_text(encoding="utf-8")
+    i = s.find('"dates": [')
+    m = re.search(r'"([0-9-]{10})"\]', s[i:s.find("]", i) + 1]) if i >= 0 else None
+    return m and m[1]
+
+
+def write_index(slug, done):
+    """data/index.js for the menu: every market in markets.csv; a built one (its data file exists) has its last close
+    and build time. Markets not rebuilt in this run keep their entry while their file is unchanged; a file written since
+    (another run, another folder) gets its date from the file itself."""
+    try:
+        old = json.loads(INDEX.read_text(encoding="utf-8").removeprefix("window.INDEX = ").rstrip().rstrip(";"))
+    except (OSError, ValueError):  # missing, or cut short by a crashed write: rebuild it from the files
+        old = []
+    old, now, rows = {e["symbol"]: e for e in old}, datetime.now().isoformat(timespec="seconds"), []
+    for g, m in GROUPS.items():
+        for t, n in m.items():
+            f, e = OUT / "data" / f"{slug[t]}.js", old.get(t, {})
+            mtime = f.stat().st_mtime if f.exists() else None
+            if t in done:
+                date, built = done[t], now
+            elif mtime is None:
+                date = built = None
+            elif e.get("mtime") == mtime and e.get("date"):
+                date, built = e["date"], e["built"]
+            else:
+                date, built = file_date(f), datetime.fromtimestamp(mtime).isoformat(timespec="seconds")
+            rows.append({"symbol": t, "slug": slug[t], "name": n, "group": g, "date": date, "built": built, "mtime": mtime})
+    tmp = INDEX.with_suffix(".js.tmp")  # replaced in one step, so the page or another run never reads half a file
+    tmp.write_text("window.INDEX = [\n" + ",\n".join(map(json.dumps, rows)) + "\n];\n", encoding="utf-8")
+    os.replace(tmp, INDEX)
+
+
+def serve(port):
+    """This folder on http://127.0.0.1:port, plus POST /build?symbol=X: builds that one market, one build at a time,
+    and answers once it is done."""
+    busy = threading.Lock()
+    # The names a browser on this computer sends; any other Host is another site's rebound DNS name
+    hosts = {f"{h}:{port}" for h in ("127.0.0.1", "localhost")} | ({"127.0.0.1", "localhost"} if port == 80 else set())
+
+    class Handler(SimpleHTTPRequestHandler):
+        def send_head(self):  # GET and HEAD
+            path = urlsplit(self.path).path
+            if self.headers.get("Host") not in hosts or any(p.startswith(".") for p in path.split("/")):
+                self.send_error(404)  # also keeps .git and other dot folders private
+                return None
+            return super().send_head()
+
+        def list_directory(self, path):
+            self.send_error(404)
+            return None
+
+        def do_POST(self):
+            u = urlsplit(self.path)
+            sym = parse_qs(u.query).get("symbol", [""])[0]
+            host = self.headers.get("Host")
+            # Only this page may ask: another site open in the browser sends another Origin
+            if host not in hosts or self.headers.get("Origin", f"http://{host}") != f"http://{host}":
+                return self.send_error(403)
+            if u.path != "/build" or sym not in read_list()[0]:  # read each time, so a market added by --add can build
+                return self.send_error(404, "Not a market in markets.csv")
+            if not busy.acquire(blocking=False):
+                return self.send_error(409, "Another build is running")
+            try:
+                r = subprocess.run([sys.executable, str(Path(__file__).resolve()), sym], cwd=OUT,
+                                   capture_output=True, text=True, timeout=1800)
+                ok, log = r.returncode == 0, r.stdout + r.stderr
+            except subprocess.TimeoutExpired:  # a hung download must not hold the lock for good
+                ok, log = False, "Build timed out after 30 minutes."
+            finally:
+                busy.release()
+            body = json.dumps({"ok": ok, "log": log[-3000:]}).encode()
+            self.send_response(200 if ok else 500)
+            self.send_header("Content-Type", "application/json")
+            self.send_header("Content-Length", str(len(body)))
+            self.end_headers()
+            self.wfile.write(body)
+
+    httpd = ThreadingHTTPServer(("127.0.0.1", port), partial(Handler, directory=str(OUT)))
+    print(f"Open http://127.0.0.1:{port}/app.html (only this computer can reach it). Ctrl+C stops the server.")
+    try:
+        httpd.serve_forever()
+    except KeyboardInterrupt:
+        pass
+
+
 def add(sym, name, group):
     global NAMES, GROUPS
     with open(LIST, "a+", newline="", encoding="utf-8") as f:
@@ -401,6 +498,8 @@ def add(sym, name, group):
 
 def main():
     args, new = sys.argv[1:], None
+    if args[:1] == ["--serve"]:
+        return serve(int(args[1]) if len(args) > 1 else 8765)
     if args[:1] == ["--add"]:
         if len(args) not in (3, 5) or (len(args) == 5 and args[3] != "--group"):
             sys.exit('Usage: python market_highs.py --add SYMBOL "Name" [--group GROUP]')
@@ -413,7 +512,8 @@ def main():
             new = (sym, args[2], group)
         args = [sym]
     tickers = args or list(NAMES)
-    data = {t: highs(s) for t, s in load(tickers).items()}  # exits when Yahoo returns nothing
+    closes = load(tickers)  # exits when Yahoo returns nothing
+    data = {t: highs(s) for t, s in closes.items()}
     if new:
         add(*new)  # only once Yahoo knows the symbol, so a wrong one never lands in the list
     # Only [a-z0-9_.-]: app.html accepts nothing else in ?m=
@@ -433,10 +533,15 @@ def main():
             print(f"{t} failed:", file=sys.stderr)
             traceback.print_exception(e)  # includes the worker's traceback
             failed.append(t)
+    write_index(slug, {t: str(data[t].index[-1].date()) for t in jobs if t not in failed})
     if summary:
         table = pd.DataFrame(summary)
-        table.to_csv(OUT / "market_highs.csv", index=False)
         print(table.to_string(index=False))
+        csv_file = OUT / "market_highs.csv"
+        if args and csv_file.exists():  # some markets only (a "Build now" click, --add): keep the other rows
+            rest = pd.read_csv(csv_file)
+            table = pd.concat([rest[~rest["index"].isin(table["index"])], table])
+        table.to_csv(csv_file, index=False)
     if failed:  # non-zero exit, so the scheduled run shows the failure
         sys.exit(f"{len(failed)} failed: {' '.join(failed)}")
 

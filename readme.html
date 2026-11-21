@@ -30,7 +30,7 @@ a{color:var(--rise)}
 <p class="lede">One offline page for every market: how far it is below its all-time high, its real turning points, and what
 every past fall this deep did next. Each weekday after the close a new guess, a year ahead, is saved and scored against
 what really happens.</p>
-<p>It covers about 540 markets, listed in <code>markets.csv</code> and grouped in the <b>Market</b> list at the top of the page:</p>
+<p>It covers about 540 markets, listed in <code>markets.csv</code> and grouped in the <b>Index, stock or commodity</b> list at the top of the page:</p>
 <ul>
 <li><b>Indices:</b> Nasdaq Composite, Nasdaq-100, S&amp;P 500, Dow Jones, Dow Transports, Russell 2000, NYSE Composite,
 DAX 40, FTSE 100, CAC 40, Euro Stoxx 50, Stoxx Europe 600, Nikkei 225, KOSPI, Hang Seng, Shanghai Composite, Sensex,
@@ -50,14 +50,25 @@ python market_highs.py              # every market in markets.csv, one process p
 python market_highs.py "^IXIC" "^GSPC"  # only these (Yahoo symbols)</code></pre>
 <p>Run it from this folder. Quote symbols that start with <code>^</code>: in Windows <code>cmd</code> an unquoted <code>^</code> is dropped.
 A market that fails is printed with its error and the run ends with a non-zero exit code; the others are still built.
-A run for only some markets rewrites <code>market_highs.csv</code> with just those markets; the next full run fills it again.</p>
+A run for only some markets updates their rows in <code>market_highs.csv</code> and keeps the others.</p>
 <p>Then open <code>app.html</code> in a browser (the Nasdaq Composite), or pick a market with <code>?m=</code>:
 <code>app.html?m=gspc</code>. <code>highs_ixic.html</code> and the other <code>highs_*.html</code> still work and open the same page.
 It works offline; <code>plotly.min.js</code> is written next to it on every run. The data files are not kept in git; each machine builds its own.
-A market not built yet shows a short note with the command to build it.</p>
+</p>
+<p><b>The list:</b> every market in <code>markets.csv</code>, as <i>Name (SYMBOL)</i>, grouped as in the file. A built market shows
+its last close date; one not built yet is greyed and says <i>not built yet</i>. A click on a market, Enter or the <b>Open</b>
+button opens it (arrow keys only move through the list). Picking one not built yet opens a short panel with the exact
+command to build it and a <b>Copy</b> button. The list comes from <code>data/index.js</code>, which every run rewrites, so it is
+current for every market, also after a run for only a few. In a folder with nothing built yet, the page shows
+<code>python market_highs.py</code> to build them all.</p>
+<p><b>Build from the page:</b> <code>python market_highs.py --serve</code> (or <code>--serve 8080</code>; default port 8765)
+serves this folder on <code>http://127.0.0.1:8765/app.html</code> (or <code>localhost</code>), reachable only from this computer. Opened from there,
+a market not built yet gets a <b>Build now</b> button and a built one a small <b>Rebuild</b> link; the page reloads when the build
+is done. One build runs at a time, for at most 30 minutes, and only for markets in <code>markets.csv</code>. Opened from disk, the page shows the command
+and the Copy button only. Ctrl+C stops the server.</p>
 <p><b>Add a company or index:</b> <code>python market_highs.py --add "SPOT" "Spotify"</code> adds the Yahoo symbol and name to
 <code>markets.csv</code> (group Companies; <code>--group "Indices"</code> for an index) and builds it. A symbol Yahoo has no data for is not added. Only the new market's history is downloaded;
-the 23:00 run includes it from then on, and the other markets' menus list it after their next rebuild.</p>
+the 23:00 run includes it from then on, and it is in the list straight away.</p>
 
 <h2>How it works</h2>
 <svg viewBox="0 0 820 200" role="img" aria-label="Flow: Yahoo Finance daily closes go into market_highs.py, which writes one data file per market in data/, shown by app.html, plus a redirect page per market, a CSV of today's numbers, and one saved guess per market per day in predictions/">
@@ -143,6 +154,7 @@ WTI's negative closes of April 2020 are dropped, since % moves and a log scale n
 <tr><td><code>market_highs.py</code></td><td>Downloads the closes, works out highs, falls, similar cases and guesses, writes the data files.</td></tr>
 <tr><td><code>markets.csv</code></td><td>Every market: Yahoo symbol, name and menu group. Edit it to add or remove markets.</td></tr>
 <tr><td><code>app.html</code></td><td>The page for every market: layout, charts and tooltips. Opens <code>data/&lt;market&gt;.js</code> for <code>?m=&lt;market&gt;</code>.</td></tr>
+<tr><td><code>data/index.js</code></td><td>The list on the page: every market with its symbol, group, last close and build time, rewritten on every run (not in git).</td></tr>
 <tr><td><code>data/&lt;market&gt;.js</code></td><td>One market's numbers for the page, rewritten when that market is built (not in git).</td></tr>
 <tr><td><code>highs_*.html</code></td><td>Short redirects to <code>app.html?m=&lt;market&gt;</code>, so old links and bookmarks keep working (not in git).</td></tr>
 <tr><td><code>plotly.min.js</code></td><td>The chart library the page loads, written on every run (not in git).</td></tr>

@@ -26,6 +26,17 @@ h1{font-size:36px;line-height:1.15;font-weight:700;letter-spacing:-.01em;max-wid
 .pills a:focus-visible{outline:2px solid var(--rise);outline-offset:2px}
 .pick{font-weight:600}.pick select{font:600 15px system-ui,sans-serif;padding:8px 12px;margin-left:8px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--ink)}
 .pick select:focus-visible{outline:2px solid var(--rise);outline-offset:2px}
+.pick select{max-width:min(640px,100%)}.pick option{font-weight:400;color:var(--ink)}.pick option.off{color:#6B7280}
+.pickrow{display:flex;align-items:center;gap:6px 12px;flex-wrap:wrap}
+.cmd{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:16px 0 4px}
+.cmd code{font:14px var(--mono);background:var(--ground);border:1px solid var(--line);border-radius:8px;padding:9px 12px;user-select:all}
+.act{font:600 14px system-ui,sans-serif;padding:9px 16px;border:1px solid var(--ink);border-radius:8px;background:var(--card);color:var(--ink);cursor:pointer}
+.act.main{background:var(--rise);border-color:var(--rise);color:#fff}
+.linkbtn{font:13px system-ui,sans-serif;background:none;border:0;padding:4px;color:var(--rise);text-decoration:underline;cursor:pointer}
+.act:focus-visible,.linkbtn:focus-visible{outline:2px solid var(--rise);outline-offset:2px}
+.act:disabled,.linkbtn:disabled{opacity:.6;cursor:progress}
+.stat{font-size:13px;color:var(--ink2);margin:6px 0 0}
+.build{display:flex;flex-direction:column;gap:12px}.build .cmd{margin:4px 0 0}
 .card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:16px 18px}
 .ctl{display:flex;gap:10px 24px;flex-wrap:wrap;align-items:center;margin-bottom:12px}
 .seg{display:flex;align-items:center;gap:6px;flex-wrap:wrap}.seg>span{font-weight:600;margin-right:4px}
@@ -185,7 +196,10 @@ i.sw{display:inline-block;width:12px;height:12px;border-radius:2px;flex:none}
   <header>
     <div class="headrow">
       <div class="kicker up" id="asof"></div>
-      <label class="pick">Market <select id="switch" onchange="location.href=this.value"></select></label>
+      <div class="pickrow">
+        <label class="pick">Index, stock or commodity <select id="switch"></select></label> <button type="button" class="act" id="open">Open</button>
+        <span id="rebuildBox" hidden><button type="button" class="linkbtn" id="rebuild">Rebuild</button> <span class="stat" id="rebuildStat" role="status"></span></span>
+      </div>
     </div>
     <h1 id="title"></h1>
     <p class="verdict" id="verdict"></p>
@@ -201,7 +215,7 @@ i.sw{display:inline-block;width:12px;height:12px;border-radius:2px;flex:none}
       <div>
         <div class="kicker">1 · THE SWINGS</div>
         <h2 data-k="chart">Turning points, and how far below the record each day</h2>
-        <p>A high or low only counts once the index reverses by the size you pick, so daily wiggles are ignored. The lower strip shares the time axis: its dips are the falls from the record.</p>
+        <p>A high or low only counts once the price reverses by the size you pick, so daily wiggles are ignored. The lower strip shares the time axis: its dips are the falls from the record.</p>
       </div>
       <div class="ctl">
         <div class="seg" id="sizes" role="group" aria-label="Reversal size"><span>Reversal</span></div>
@@ -358,33 +372,110 @@ i.sw{display:inline-block;width:12px;height:12px;border-radius:2px;flex:none}
     </div>
   </section>
 
-  <p class="foot">A high counts as a turning point once the index closes the chosen size below it, and a low once it
+  <p class="foot">A high counts as a turning point once the price closes the chosen size below it, and a low once it
     closes that size above it; a pullback smaller than the setting stays inside one swing. The newest turn is provisional
     until the reversal completes. Records use the full history since <span id="firstYear"></span>.<span id="caveat"></span> Daily closes from Yahoo Finance
     (<span id="src"></span>); a run during US market hours uses the live price as the last close. Not investment advice.</p>
 </main>
 
 <script>
-// One page for every market: app.html?m=<slug> loads data/<slug>.js (window.D = {...}), written by market_highs.py.
+// One page for every market: app.html?m=<slug> loads data/<slug>.js (window.D = {...}), written by market_highs.py;
+// data/index.js (window.INDEX) lists every market for the menu, built or not, and is loaded first.
 // A <script src> rather than fetch(), which does not work on pages opened from disk.
 const M = new URLSearchParams(location.search).get('m') || 'ixic';
-function missing() {
-  document.title = 'Swing map: no data';
-  const p = document.createElement('p');
-  p.className = 'verdict';
-  p.textContent = /^[a-z0-9_.-]+$/.test(M)
-    ? `${M.toUpperCase()} is not built yet. In this folder run: python market_highs.py "^${M.toUpperCase()}" for an index, "${M.toUpperCase()}" for a company, or python market_highs.py for every market.`
-    : 'Unknown market. Pick one with app.html?m=<name>, for example app.html?m=ixic.';
-  if (M !== 'ixic') p.append(' ', Object.assign(document.createElement('a'), {href: 'app.html', textContent: 'Back to the Nasdaq Composite'}));
-  document.querySelector('main').replaceChildren(p);
-}
-if (/^[a-z0-9_.-]+$/.test(M)) {
+const LIVE = location.protocol === 'http:' && ['127.0.0.1', 'localhost'].includes(location.hostname);  // served by market_highs.py --serve: it can build
+const $ = id => document.getElementById(id);
+const MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+const dl = s => `${+s.slice(8, 10)} ${MON[+s.slice(5, 7) - 1]} ${s.slice(0, 4)}`;  // 20 Nov 2026
+const pl = (n, one, many = one + 's') => `${n} ${n === 1 ? one : many}`;  // 1 earlier fall, 3 earlier falls
+const here = () => (window.INDEX || []).find(e => e.slug === M);
+
+function load(src, done, fail) {
   const s = document.createElement('script');
-  s.src = `data/${M}.js`;
-  s.onload = () => window.D ? page(window.D) : missing();
-  s.onerror = missing;
-  document.body.append(s);
-} else missing();
+  s.src = src + (LIVE ? '?t=' + Date.now() : '');  // served: never a cached copy from before a build
+  s.onload = done; s.onerror = fail;
+  document.head.append(s);
+}
+function menu(L) {
+  const sel = $('switch');
+  if (!L.some(e => e.slug === M)) sel.append(new Option('Pick one', '', true, true));
+  for (const g of new Set(L.map(e => e.group))) {
+    const og = Object.assign(document.createElement('optgroup'), {label: g});
+    for (const e of L.filter(e => e.group === g)) {
+      // Without data/index.js (built before it existed) the menu comes from the page's own list, names only
+      const o = new Option(!e.symbol ? e.name : `${e.name} (${e.symbol}) · ${e.built ? 'last close ' + (e.date ? dl(e.date) : 'not known') : 'not built yet'}`, e.slug, e.slug === M, e.slug === M);
+      if (e.symbol && !e.built) o.className = 'off';
+      og.append(o);
+    }
+    sel.append(og);
+  }
+  // Arrow keys change a closed select in Chrome and Edge: only a mouse pick, Enter or Open leaves the page
+  const go = () => sel.value && sel.value !== M && (location.href = 'app.html?m=' + sel.value);
+  let keyed = false;
+  sel.onkeydown = ev => ev.key === 'Enter' ? go() : keyed = true;
+  sel.onchange = () => keyed || go();
+  sel.onblur = sel.onmousedown = () => keyed = false;
+  $('open').onclick = go;
+}
+// Over --serve only: the server builds one market, then the page reloads to show it
+async function build(sym, btn, out) {
+  btn.disabled = true;
+  out.textContent = `Building ${sym}: from a few seconds to a few minutes. The page reloads when it is done.`;
+  try {
+    const r = await fetch('/build?symbol=' + encodeURIComponent(sym), {method: 'POST'});
+    if (r.ok) return location.reload();
+    const log = r.status === 500 ? ((await r.json()).log || '').trim().split('\n').at(-1) : '';
+    out.textContent = r.status === 409 ? 'Another build is running. Try again once it is done.' : `The build failed (${r.status}). ${log}`;
+  } catch {
+    out.textContent = 'No answer from the server. Start it again with: python market_highs.py --serve';
+  }
+  btn.disabled = false;
+  btn.focus();
+}
+function missing() {
+  document.title = 'Swing map: not built yet';
+  const e = here(), box = document.createElement('section'), main = document.querySelector('main');
+  box.className = 'card build';
+  if (!window.INDEX) {  // a fresh clone: data/ is not in git
+    box.innerHTML = `<h1>Nothing is built yet</h1><p class="verdict">In this folder run this command, then reload the page.</p>
+      <div class="cmd"><code id="cmd"></code><button type="button" class="act" id="copy">Copy</button></div>
+      <p class="stat" id="stat" role="status"></p>`;
+    main.replaceChildren(main.querySelector('.headrow'), box);
+    return copyCmd('python market_highs.py');
+  }
+  if (!e) {
+    box.innerHTML = '<h1>Unknown market</h1><p class="verdict">Pick one in the list above. A market not in the list is added with <code>python market_highs.py --add SYMBOL "Name"</code>.</p>';
+    return main.replaceChildren(main.querySelector('.headrow'), box);
+  }
+  box.innerHTML = `<h1 id="title"></h1><p class="verdict">Build it once: run this command in this folder, then reload the page. <code>python market_highs.py</code> builds every market.</p>
+    <div class="cmd"><code id="cmd"></code><button type="button" class="act" id="copy">Copy</button>${LIVE ? '<button type="button" class="act main" id="buildNow">Build now</button>' : ''}</div>
+    <p class="stat" id="stat" role="status"></p>`;
+  main.replaceChildren(main.querySelector('.headrow'), box);
+  $('title').textContent = `${e.name} (${e.symbol}) is not built yet`;
+  copyCmd(`python market_highs.py "${e.symbol}"`);
+  if (LIVE) $('buildNow').onclick = () => build(e.symbol, $('buildNow'), $('stat'));
+}
+function copyCmd(cmd) {
+  $('cmd').textContent = cmd;
+  $('copy').onclick = () => {
+    const ok = () => $('stat').textContent = 'Copied. Paste it in a terminal in this folder.';
+    const pick = () => { getSelection().selectAllChildren($('cmd')); $('stat').textContent = 'Selected: press Ctrl+C to copy.'; };
+    navigator.clipboard ? navigator.clipboard.writeText(cmd).then(ok, pick) : pick();
+  };
+}
+function rebuildLink(D) {
+  const e = here() || {symbol: D.ticker};
+  if (!LIVE) return;
+  $('rebuildBox').hidden = false;
+  if (e.built) $('rebuild').title = `Built ${e.built.replace('T', ' ')}`;
+  $('rebuild').onclick = () => build(e.symbol, $('rebuild'), $('rebuildStat'));
+}
+const shown = D => {
+  if (!window.INDEX) menu(D.pages.map(p => ({name: p.name, group: p.group, slug: p.href.split('m=')[1]})));
+  page(D); rebuildLink(D);
+};
+const market = () => /^[a-z0-9_.-]+$/.test(M) ? load(`data/${M}.js`, () => window.D ? shown(window.D) : missing(), missing) : missing();
+load('data/index.js', () => { menu(window.INDEX || []); market(); }, market);
 
 function page(D) {
 document.title = `Swing map: ${D.name}`;
@@ -395,9 +486,6 @@ const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).
 const money = x => x.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
 const pc = (x, d = 1) => (x >= 0 ? '+' : '') + (x * 100).toFixed(d) + '%';
 const cls = x => x >= 0 ? 'pos' : 'neg';
-const $ = id => document.getElementById(id);
-const MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-const dl = s => `${+s.slice(8, 10)} ${MON[+s.slice(5, 7) - 1]} ${s.slice(0, 4)}`;  // 20 Nov 2026
 const mon = s => `${MON[+s.slice(5, 7) - 1]} ${s.slice(0, 4)}`;  // Nov 2026
 const big = x => Math.round(x).toLocaleString('en-US');
 const span = d => d === 1 ? '1 day' : d < 60 ? `${d} days` : d < 730 ? `${Math.round(d / 30.44)} months` : `${(d / 365.25).toFixed(1)} years`;
@@ -493,7 +581,7 @@ function render() {
   const y10 = new Date(dates[N - 1]); y10.setFullYear(y10.getFullYear() - 10);
   const r10 = (D.rank || []).filter(f => !f.now && f.peak >= y10.toISOString().slice(0, 10));
   const dMax = Math.ceil(Math.max(1, -ddNow * 100, ...r10.map(f => -f.depth)) / 10) * 10, deeper10 = r10.filter(f => f.depth < ddNow * 100).length;
-  const t2 = tile(`Below the record${tip('ath')}`, pc(ddNow), fink, `${deeper10} of ${r10.length} falls of 10%+ in 10 years went deeper. Needs ${pc(1 / (1 + ddNow) - 1)} to get back.`,
+  const t2 = tile(`Below the record${tip('ath')}`, pc(ddNow), fink, `${deeper10} of ${pl(r10.length, 'fall')} of 10%+ in 10 years went deeper. Needs ${pc(1 / (1 + ddNow) - 1)} to get back.`,
     `<div class="mini" role="img" aria-label="Today's fall against the falls of the last 10 years"><i class="trk"></i><i class="fill" style="width:${(-ddNow * 100 / dMax * 100).toFixed(1)}%"></i>` +
     r10.map(f => `<i class="tick" style="left:${(-f.depth / dMax * 100).toFixed(1)}%" title="${mon(f.peak)}: −${(-f.depth).toFixed(1)}%"></i>`).join('') + '</div>',
     ['0%', 'ticks: past 10y falls', `−${dMax}%`]);
@@ -510,16 +598,16 @@ function render() {
   let t3, t4;
   if (R) {
     const sMax = Math.ceil(Math.max(S.days, ...R.map(r => r.hitDays)) / 20) * 20, faster = R.filter(r => r.hitDays <= S.days).length;
-    t3 = tile(`Speed${tip('speed')}`, `${S.days} days`, ink, `from the record to ${pc(ddNow, 0)}. ${faster} of ${R.length} past falls this deep got here as fast or faster.`,
-      `<div class="mini"><i class="ln"></i>${R.map(r => dot(r.hitDays, sMax, '', `${mon(r.peak)} fall: ${r.hitDays} days`)).join('')}${dot(S.days, sMax, ' now', `Now: ${S.days} days`)}</div>`,
-      ['0 days', 'orange: now', `${sMax} days`]);
+    t3 = tile(`Speed${tip('speed')}`, pl(S.days, 'day'), ink, `from the record to ${pc(ddNow, 0)}. ${faster} of ${pl(R.length, 'past fall')} this deep got here as fast or faster.`,
+      `<div class="mini"><i class="ln"></i>${R.map(r => dot(r.hitDays, sMax, '', `${mon(r.peak)} fall: ${pl(r.hitDays, 'day')}`)).join('')}${dot(S.days, sMax, ' now', `Now: ${pl(S.days, 'day')}`)}</div>`,
+      ['0 days', 'orange: now', pl(sMax, 'day')]);
   } else
     t3 = tile(`Current swing${tip('swing')}`, pc(last / C[lp.i] - 1), z.up ? rise : fink, swingNote);
   if (yrs.length) {
     const v = yrs.map(c => c.fwd[252]), lo = Math.floor(Math.min(-.6, ...v) * 10) / 10, hi = Math.ceil(Math.max(1.2, ...v) * 10) / 10;
     const at = x => ((x - lo) / (hi - lo) * 100).toFixed(1) + '%';
     t4 = tile(`Higher a year later${tip('year', 1)}`, `${v.filter(x => x > 0).length} of ${v.length}`, ink,
-      `a year after the past falls reached ${pc(ddNow, 0)}: from ${pc(Math.min(...v), 0)} to ${pc(Math.max(...v), 0)}.`,
+      `a year after the past ${v.length === 1 ? 'fall' : 'falls'} reached ${pc(ddNow, 0)}: from ${pc(Math.min(...v), 0)} to ${pc(Math.max(...v), 0)}.`,
       `<div class="mini"><i class="ln"></i><i class="zero" style="left:${at(0)}"></i>` +
       yrs.map(c => `<i class="dot" style="left:${at(c.fwd[252])};background:${c.fwd[252] >= 0 ? rise : fall}" title="${mon(c.peak)} fall: ${pc(c.fwd[252], 0)} a year on"></i>`).join('') + '</div>',
       [pc(lo, 0), '0', pc(hi, 0)]);
@@ -615,7 +703,7 @@ function render() {
      annotations: swings.filter(w => top8.has(w)).map(w => ({x: mid(w)[0], y: w.move * 100, showarrow: false, yanchor: w.move > 0 ? 'bottom' : 'top',
        text: `<b>${pc(w.move, 0)}</b>`, font: {size: 11, color: w.move > 0 ? riseC : fallInk}})),
      hoverlabel: hl}, {responsive: true, displayModeBar: false});
-  $('swingBars').setAttribute('aria-label', `Every swing in view as a bar: ${swings.filter(w => w.move > 0).length} rises and ${swings.filter(w => w.move < 0).length} falls; width is how long each lasted, height how big it was`);
+  $('swingBars').setAttribute('aria-label', `Every swing in view as a bar: ${pl(swings.filter(w => w.move > 0).length, 'rise')} and ${pl(swings.filter(w => w.move < 0).length, 'fall')}; width is how long each lasted, height how big it was`);
 
   // Swing table, newest first
   $('swingCount').textContent = swings.length;
@@ -634,7 +722,7 @@ function render() {
   $('typTitle').textContent = `A typical swing at ${Math.round(size * 100)}% reversals`;
   $('typical').innerHTML = `<div class="f"><strong>Falls · ${falls.length} in view</strong>${box(falls, 'deepest', Math.min)}</div><div class="r"><strong>Rises · ${rises.length} in view</strong>${box(rises, 'biggest', Math.max)}</div>`;
   const curMove = last / C[lp.i] - 1, ref = z.up ? rises : falls, beat = ref.filter(w => Math.abs(w.move) < Math.abs(curMove)).length;
-  $('typNote').textContent = ref.length ? `The current ${z.up ? 'rise' : 'fall'}, ${pc(curMove)} in ${N - 1 - lp.i} trading days, is ${z.up ? 'bigger' : 'deeper'} than ${beat === ref.length ? 'all' : beat + ' of the'} ${ref.length} finished ${z.up ? 'rises' : 'falls'} in view.` : '';
+  $('typNote').textContent = ref.length ? `The current ${z.up ? 'rise' : 'fall'}, ${pc(curMove)} in ${pl(N - 1 - lp.i, 'trading day')}, is ${z.up ? 'bigger' : 'deeper'} than ${beat === ref.length ? (ref.length === 1 ? 'the' : 'all') : beat + ' of the'} ${pl(ref.length, z.up ? 'finished rise' : 'finished fall')} in view.` : '';
 
   // Support and resistance from the turns in view: resistances highest first, then supports
   const lows = all.filter(p => p.type === 'L' && p.i >= s0 && C[p.i] < last).sort((a, b) => C[b.i] - C[a.i]).slice(0, 2);
@@ -653,8 +741,8 @@ function similarFalls() {
   const R = S.rows, fast = r => r.first <= S.now, F = R.filter(fast), n = R.length, last = C[N - 1];
   const yr1 = Object.fromEntries(S.scen[0].cases.filter(c => c.fwd[252] !== undefined).map(c => [c.peak, c.fwd[252]]));
   const v1 = Object.values(yr1), toHigh = R.map(r => r.moreDays + r.recDays);
-  $('simTitle').textContent = `The ${n} earlier falls that got to ${pc(S.now)}, since ${S.since}`;
-  $('simIntro').textContent = `Today's fall took ${S.days} days to get here; ${F.length} of the ${n} got here as fast or faster. Read each row across: how it got here, how much further it fell, and where it stood a year later.`;
+  $('simTitle').textContent = `The ${pl(n, 'earlier fall')} that got to ${pc(S.now)}, since ${S.since}`;
+  $('simIntro').textContent = `Today's fall took ${pl(S.days, 'day')} to get here; ${F.length} of the ${n} got here as fast or faster. Read each row across: how it got here, how much further it fell, and where it stood a year later.`;
 
   // Four stat cards: how many fell 5 and 10% further (20% and the total fall in the notes), a year later, back at the high
   const cnt = f => R.filter(r => -r.more >= f).length, lvl = f => money(last * (1 - f));
@@ -677,7 +765,7 @@ function similarFalls() {
       <td class="m r">${pc(r.depth)}</td><td class="m r">${money(D.athValue * (1 + r.depth))}</td><td class="r">${r.recover}</td>${yrCell(yr1[r.peak])}</tr>`).join('');
 
   $('simCount').textContent = n;
-  $('simTable').innerHTML = `<tr><th>High on</th><th class="r">Reached ${pc(S.now)} after</th><th class="r">Fall in its first ${S.days} days</th>
+  $('simTable').innerHTML = `<tr><th>High on</th><th class="r">Reached ${pc(S.now)} after</th><th class="r">Fall in its first ${pl(S.days, 'day')}</th>
     <th class="r">Then fell further</th><th class="r">over</th><th>Low on</th><th class="r">Total fall</th><th class="r">Low to back at high</th><th>Rise after low</th></tr>` +
     R.slice().reverse().map(r => `<tr${fast(r) ? ' style="background:var(--fall-bg)"' : ''}><td>${r.peak}</td><td class="r">${span(r.hitDays)}</td>
       <td class="r neg">${pc(r.first)}</td><td class="r neg">${pc(r.more)}</td><td class="r">${span(r.moreDays)}</td><td>${r.low}</td>
@@ -698,7 +786,7 @@ function similarFalls() {
   function fan(sc) {
     const P = last * (1 - sc.extra), cs = sc.cases.slice().reverse(), W = cs.map(c => c.fwd), K = Math.max(0, ...W.map(f => f.length));
     const h0 = Math.max(N - 63, 0), ath = D.athValue;
-    $('fanTitle').textContent = sc.extra ? `If it falls ${Math.round(sc.extra * 100)}% more, to ${money(P)} (${pc(depthOf(sc.extra))} from the record): the year after, ${cs.length} times`
+    $('fanTitle').textContent = sc.extra ? `If it falls ${Math.round(sc.extra * 100)}% more, to ${money(P)} (${pc(depthOf(sc.extra))} from the record): the year after, ${pl(cs.length, 'time')}`
       : `The year after reaching ${pc(S.now)}, replayed from today's close`;
     const day = k => { const d = new Date(dates[N - 1]); d.setDate(d.getDate() + Math.round(k * 365.25 / 252)); return d.toISOString().slice(0, 10); };
     const ks = [...Array(K).keys()], q = k => W.filter(f => f.length > k).map(f => P * (1 + f[k])), kx = ks.map(day);
@@ -764,7 +852,7 @@ function similarFalls() {
     [...$('scen').querySelectorAll('button')].forEach(b => b.setAttribute('aria-pressed', +b.dataset.x === sc.extra));
   }
   if (!ok.length) { $('fanSub').hidden = true; $('testSub').hidden = true; return; }
-  $('scen').insertAdjacentHTML('beforeend', ok.map(sc => `<button type="button" data-x="${sc.extra}">${sc.extra ? `${Math.round(sc.extra * 100)}% lower` : 'Today'} (${sc.cases.length} cases)</button>`).join(''));
+  $('scen').insertAdjacentHTML('beforeend', ok.map(sc => `<button type="button" data-x="${sc.extra}">${sc.extra ? `${Math.round(sc.extra * 100)}% lower` : 'Today'} (${pl(sc.cases.length, 'case')})</button>`).join(''));
   $('scen').onclick = e => { const x = e.target.closest('button')?.dataset.x; if (x !== undefined) fan(ok.find(sc => sc.extra === +x)); };
   fan(ok[0]);
 
@@ -796,7 +884,7 @@ function similarFalls() {
         <td class="r">${v.length >= 3 ? `${up} of ${v.length} higher; ${pc(Math.min(...v))} to ${pc(Math.max(...v))}` : '-'}</td>
         <td class="r ${a < 0 ? 'neg' : 'pos'}">${a === undefined ? '-' : pc(a)}</td><td class="${call[1]}">${call[0]}</td></tr>`;
     }).join('');
-  $('testTitle').textContent = `Would this have worked before? ${tally.dir} of ${tally.n} calls right`;
+  $('testTitle').textContent = `Would this have worked before? ${tally.dir} of ${pl(tally.n, 'call')} right`;
   $('testFacts').innerHTML = stat('Higher or lower a year on: right', `${tally.dir} of ${tally.n}`, `Falls tested: ${tally.n} with a finished year after`) +
     stat('Real result inside the earlier range', `${tally.rng} of ${tally.n}`, '') + stat('Real further fall inside the earlier range', `${tally.fallIn} of ${tally.fallN}`, '');
   // Range rows: pale bar = what the earlier falls gave, dot = what really happened a year on
@@ -825,8 +913,8 @@ function trackRecord() {
   const SPANS = [[5, '1 week'], [21, '1 month'], [126, '6 months'], [252, '1 year']];
   const dd = s => dl(s).slice(0, -5);  // 20 Nov
   let cur = null, hz = 126, way = 'deeper';
-  const WAYS = {deeper: ['Past deeper falls', '#0072B2', g => `the ${g.cases.length} past falls this deep at the most similar speed, replayed from that close; band: lowest to highest`],
-    shallow: ['Shallower falls that turned', '#009E73', g => `the ${g.alt.shallow.n} past falls that stopped between half the current depth and the current depth, replayed from their low, as if that day were the bottom`],
+  const WAYS = {deeper: ['Past deeper falls', '#0072B2', g => `the ${pl(g.cases.length, 'past fall')} this deep at the most similar speed, replayed from that close; band: lowest to highest`],
+    shallow: ['Shallower falls that turned', '#009E73', g => `the ${pl(g.alt.shallow.n, 'past fall')} that stopped between half the current depth and the current depth, replayed from their low, as if that day were the bottom`],
     random: ['Random walk', '#CC79A7', () => 'the daily moves of this market drawn at random, 1000 paths'],
     year: ['Any year', '#E69F00', g => `every 1-year stretch in its history (${g.alt.year.n}), from any starting day`],
     trend: ['Trend continues', '#7B3294', () => 'the pace of the last 60 trading days kept up for a year']};
@@ -849,7 +937,7 @@ function trackRecord() {
       return {w, n, miss: missOf(g, p), real: n ? g.real[n - 1] : null, mid: p.mid[n], lo: p.lo && p.lo[n], hi: p.hi && p.hi[n]}; });
     const best = rows.filter(r => r.miss !== null).sort((a, b) => a.miss - b.miss)[0];
     $('wayDate').textContent = dl(g.date);
-    $('wayTable').innerHTML = `<tr><th>Method</th><th class="r">Middle path, ${g.real.length} days on</th><th class="r">Band, ${g.real.length} days on</th><th class="r">Real, ${dl(dates[dates.indexOf(g.date) + g.real.length])}</th><th class="r">Average miss so far</th><th>Real vs band</th></tr>` +
+    $('wayTable').innerHTML = `<tr><th>Method</th><th class="r">Middle path, ${pl(g.real.length, 'day')} on</th><th class="r">Band, ${pl(g.real.length, 'day')} on</th><th class="r">Real, ${dl(dates[dates.indexOf(g.date) + g.real.length])}</th><th class="r">Average miss so far</th><th>Real vs band</th></tr>` +
       rows.map(r => `<tr style="${r === best ? 'font-weight:700' : ''}"><td><span style="color:${WAYS[r.w][1]}">&#9632;</span> ${WAYS[r.w][0]}${r === best ? ' (closest)' : ''}</td>
         <td class="r">${money(r.mid)} (${pc(r.mid / g.close - 1)})</td><td class="r">${r.lo ? `${money(r.lo)} to ${money(r.hi)}` : '-'}</td>
         <td class="r">${r.real ? money(r.real) : '-'}</td><td class="r">${r.miss === null ? 'from the next close' : (r.miss * 100).toFixed(1) + '%'}</td>
@@ -860,10 +948,10 @@ function trackRecord() {
     const k = g.real.length, last = g.real[k - 1], at = g.cases.filter(c => c.path.length > k);
     const dm = j => dd(ahead(g.date, j + 1)[j]);
     const res = !k ? 'Made today: the first real close is added after the next close.' : !g.res ? 'Closed: more than six months have passed.'
-      : g.res === 'inside' ? `Inside the range; ${at.filter(c => c.path[k] < g.close).length} of ${at.length} were lower by now`
+      : g.res === 'inside' ? `Inside the range; ${(n => `${n} of ${at.length} ${n === 1 ? 'was' : 'were'}`)(at.filter(c => c.path[k] < g.close).length)} lower by now`
       : `${g.res === 'below' ? 'Below' : 'Above'} every scenario, ${(g.why || '').split(':')[0].replace(/^[-+]/, '')}`;
     const rows = [['Guess made', `${dl(g.date)} at ${money(g.close)}, ${pc(g.depth)} from the record`],
-      ['Scenarios', `${g.cases.length} of ${g.n} past falls this deep, closest in speed`],
+      ['Scenarios', `${g.cases.length} of ${pl(g.n, 'past fall')} this deep, closest in speed`],
       ...(k ? [['Since then', `${pc(last / g.close - 1)} in ${k} trading day${k === 1 ? '' : 's'}, to ${money(last)}`]] : []),
       ['Result', res],
       ...(deep && k && g.near ? [['Follows best', `${mon(g.near)} fall`]] : []),
@@ -929,7 +1017,7 @@ function trackRecord() {
     if (!ok.length) { $('closeTitle').textContent = 'Closest so far: scored from the next close'; $('closeLead').textContent = ''; return; }
     const top = ok.reduce((a, w) => agg[w] < agg[a] ? w : a), maxM = Math.max(...ok.map(w => agg[w]));
     $('closeTitle').textContent = `Closest so far: ${WAYS[top][0]}, off by ${(agg[top] * 100).toFixed(1)}% on average`;
-    $('closeLead').textContent = `Each method's middle path against the real closes, averaged over the ${scored.length} guesses with at least one real close. Shorter bar = closer. All five are simple guesses, nothing more.`;
+    $('closeLead').textContent = `Each method's middle path against the real closes, averaged over the ${pl(scored.length, 'guess', 'guesses')} with at least one real close. Shorter bar = closer. All five are simple guesses, nothing more.`;
     $('closeRows').innerHTML = ws.map(w => `<span class="n${w === top ? ' best' : ''}">${sw(w)}${WAYS[w][0]}${w === top ? ' (closest)' : ''}</span>` +
       `<div>${agg[w] === null ? '' : `<i style="width:${(agg[w] / maxM * 100).toFixed(1)}%;background:${WAYS[w][1]}"></i>`}</div>` +
       `<span class="m ${w === top ? 'best' : ''}">${agg[w] === null ? 'no score yet' : `${(agg[w] * 100).toFixed(1)}% · closest on ${win[w]} day${win[w] === 1 ? '' : 's'}`}</span>`).join('');
@@ -1009,7 +1097,7 @@ function backtestCard() {
     full.forEach(r => { wins[Object.keys(W).reduce((a, w) => sc(r, w).miss < sc(r, a).miss ? w : a)]++; });
     const ok = S.filter(x => x.miss !== null), top = ok.reduce((a, x) => x.miss < a.miss ? x : a, ok[0]);
     const reals = R.map(r => r.real[k]).filter(x => x !== undefined), misses = ok.map(x => x.miss * 100);
-    $('btTitle').textContent = `Would the five guesses have worked before? ${R.length} past falls that got to ${pc(B.now)}`;
+    $('btTitle').textContent = `Would the five guesses have worked before? ${pl(R.length, 'past fall')} that got to ${pc(B.now)}`;
     $('btLead').textContent = `Each fall from the first day it got this deep, guessed with only the closes up to then. After ${lbl} the real result ran from ${pc(Math.min(...reals))} to ${pc(Math.max(...reals))}` +
       ` (higher in ${reals.filter(x => x > 0).length} of ${reals.length}); the middle guesses missed by ${Math.min(...misses).toFixed(0)}% to ${Math.max(...misses).toFixed(0)}% on average.`;
     $('btSum').innerHTML = `<tr><th>Method</th><th class="r">Falls scored</th><th class="r">Average miss over ${lbl}</th><th class="r">Real inside the band</th><th class="r">Real vs middle guess (median)</th><th class="r">Closest, head to head</th></tr>` +
@@ -1021,7 +1109,7 @@ function backtestCard() {
     $('btBars').innerHTML = S.map(x => `<span class="n${x === top ? ' best' : ''}"><i class="sw" style="background:${W[x.w][1]}"></i>${W[x.w][0]}${x === top ? ' (lowest miss)' : ''}</span>` +
       `<div>${x.miss === null ? '' : `<i style="width:${(x.miss / maxM * 100).toFixed(1)}%;background:${W[x.w][1]}"></i>`}</div>` +
       `<span class="m${x === top ? ' best' : ''}">${x.miss === null ? 'no score' : `${(x.miss * 100).toFixed(1)}%${full.length ? ` · closest ${wins[x.w]} of ${full.length}` : ''}`}</span>`).join('');
-    $('btNote').textContent = `Head to head: only the ${full.length} falls where all five methods had a guess and the span is over. Bands: past deeper falls lowest to highest case, the others 10% to 90% of paths. ` +
+    $('btNote').textContent = `Head to head: only the ${pl(full.length, 'fall')} where all five methods had a guess and the span is over. Bands: past deeper falls lowest to highest case, the others 10% to 90% of paths. ` +
       'Shallower falls that turned assumes the bottom is in, so it leans high; trend continues just extends the last 60 days. Few falls and shared events: small gaps are noise.';
     $('btTable').innerHTML = `<tr><th>Fall from the high of</th><th>Got to ${pc(B.now)} on</th><th class="r">Depth that day</th><th class="r">Bottom</th><th class="r">Real after ${lbl}</th>` +
       Object.values(W).map(([n, col]) => `<th class="r"><span style="color:${col}">&#9632;</span> ${n}: miss</th>`).join('') + '</tr>' +
@@ -1055,7 +1143,7 @@ function rankFalls() {
     const worse = R.filter(f => !f.now && f.depth < cur.depth).length, past = R.length - 1;
     const when = yrs ? 'in 10 years' : 'since ' + firstYear;
     const measured = ` (measured from ${from === 'ath' ? 'the record close' : 'the last swing high'}).`;
-    $('rankTitle').textContent = cur.depth ? `Today is ${pc(cur.depth / 100)}: ${worse} of ${past} past falls ${when} went deeper` : `At a record today: ${past} past falls of 10% or more ${when}`;
+    $('rankTitle').textContent = cur.depth ? `Today is ${pc(cur.depth / 100)}: ${worse} of ${pl(past, 'past fall')} ${when} went deeper` : `At a record today: ${pl(past, 'past fall')} of 10% or more ${when}`;
     $('rankLead').textContent = (cur.depth ? `Every fall of 10% or more, deepest first. ${past - worse} stopped before reaching today's depth. Past falls show their full depth; today's is still open, so its bar can only grow`
       : 'Every fall of 10% or more, deepest first') + measured;
     const maxD = Math.max(1, -R[0].depth) * 1.04, nowLeft = `${-cur.depth / maxD * 100}%`;
@@ -1089,16 +1177,15 @@ $('src').textContent = D.ticker;
 {
   const last = C[N - 1], dd = D.pctAth[N - 1], day = last / C[N - 2] - 1, S = D.similar;
   $('asof').textContent = `${D.name} (${D.ticker}) · daily closes to ${dl(dates[N - 1])}`;
-  $('title').textContent = dd === 0 ? `The ${D.name} closed at a record`
-    : `The ${D.name} is ${Math.abs(dd * 100).toFixed(1)}% below its record${dd <= -0.2 ? ', a bear-market fall' : ''}`;
+  const the = (here() || D.pages?.find(p => p.here))?.group === 'Indices' ? 'The ' : '';  // the Nasdaq Composite, but Gold (futures) and Apple
+  $('title').textContent = dd === 0 ? `${the}${D.name} closed at a record`
+    : `${the}${D.name} is ${Math.abs(dd * 100).toFixed(1)}% below its record${dd <= -0.2 ? ', a bear-market fall' : ''}`;
   const days = S ? S.days : Math.round((new Date(dates[N - 1]) - new Date(D.athDate)) / 864e5);
   const yrs = S && S.rows.length ? S.scen[0].cases.map(c => c.fwd[252]).filter(v => v != null) : null;
   $('verdict').textContent = `It closed at ${money(last)} on ${dl(dates[N - 1])} (${pc(day, 2)} on the day)` +
-    (dd === 0 ? ', a new record.' : `, ${days} days after the ${dl(D.athDate)} record of ${money(D.athValue)}.`) +
-    (dd < 0 && yrs ? ` ${S.rows.length} earlier falls got this deep since ${S.since}; ${yrs.filter(v => v > 0).length} were higher a year later.` : '');
+    (dd === 0 ? ', a new record.' : `, ${pl(days, 'day')} after the ${dl(D.athDate)} record of ${money(D.athValue)}.`) +
+    (dd < 0 && yrs ? ` ${pl(S.rows.length, 'earlier fall')} got this deep since ${S.since}; ${(k => k === 1 ? '1 was' : k + ' were')(yrs.filter(v => v > 0).length)} higher a year later.` : '');
 }
-$('switch').innerHTML = [...new Set(D.pages.map(p => p.group))].map(g => `<optgroup label="${g}">` +
-  D.pages.filter(p => p.group === g).map(p => `<option value="${p.href}"${p.here ? ' selected' : ''}>${p.name}</option>`).join('') + '</optgroup>').join('');
 $('falls').innerHTML = D.fallsTable; $('fallsCount').textContent = $('falls').querySelectorAll('tbody tr').length; $('daily').innerHTML = D.dailyTable;
 $('facts').innerHTML = D.facts.map(([k, v]) => `<dt>${k}</dt><dd>${String(v).replace(/\b\d{4}-\d{2}-\d{2}\b/g, dl)}</dd>`).join('');
 // The saved highs and lows leave out the last close: a low above it (or a high below it) is the last close itself
@@ -1163,7 +1250,7 @@ $('hl').innerHTML = '<tr><th>Compared with</th><th class="r">Level</th><th>Set o
   // Footer
   $('firstYear').textContent = (D.rank || []).reduce((m, f) => f.peak < m ? f.peak : m, dates[0]).slice(0, 4);
   const R = D.similar && D.similar.rows;
-  if (R && R.length) $('caveat').textContent = ` Past-fall scenarios and daily guesses replay what happened next before; they are guesses, not predictions or evidence: with ${R.length} cases, one fall can swing every summary.`;
+  if (R && R.length) $('caveat').textContent = ` Past-fall scenarios and daily guesses replay what happened next before; they are guesses, not predictions or evidence: with ${pl(R.length, 'case')}, one fall can swing every summary.`;
 }
 const btn = (v, txt) => `<button type="button" data-v="${v}">${txt}</button>`;
 $('sizes').insertAdjacentHTML('beforeend', SIZES.map(v => btn(v, Math.round(v * 100) + '%')).join(''));
