@@ -26,7 +26,8 @@ h1{font-size:36px;line-height:1.15;font-weight:700;letter-spacing:-.01em;max-wid
 .pills a:focus-visible{outline:2px solid var(--rise);outline-offset:2px}
 .pick{font-weight:600}.pick select{font:600 15px system-ui,sans-serif;padding:8px 12px;margin-left:8px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--ink)}
 .pick select:focus-visible{outline:2px solid var(--rise);outline-offset:2px}
-.pick select{max-width:min(640px,100%)}.pick option{font-weight:400;color:var(--ink)}.pick option.off{color:#6B7280}
+.pick select{max-width:min(640px,100%)}.pick option{font-weight:400;color:var(--ink)}.pick option.off{color:#6B7280}.pick .f0{color:#15803D}.pick .f1{color:#B45309}.pick .f2{color:#B91C1C}
+.fresh{font:12px ui-monospace,Consolas,monospace;color:var(--muted)}.fresh b{font-weight:600}.fresh .f0{color:#15803D}.fresh .f1{color:#B45309}.fresh .f2{color:#B91C1C}
 .pickrow{display:flex;align-items:center;gap:6px 12px;flex-wrap:wrap}
 .cmd{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:16px 0 4px}
 .cmd code{font:14px var(--mono);background:var(--ground);border:1px solid var(--line);border-radius:8px;padding:9px 12px;user-select:all}
@@ -198,6 +199,7 @@ i.sw{display:inline-block;width:12px;height:12px;border-radius:2px;flex:none}
       <div class="kicker up" id="asof"></div>
       <div class="pickrow">
         <label class="pick">Index, stock or commodity <select id="switch"></select></label> <button type="button" class="act" id="open">Open</button>
+        <span class="fresh"><b class="f0">&#9679; up to date</b> · <b class="f1">&#9670; up to a week old</b> · <b class="f2">&#9650; older</b> · &#8212; not built</span>
         <span id="rebuildBox" hidden><button type="button" class="linkbtn" id="rebuild">Rebuild</button> <span class="stat" id="rebuildStat" role="status"></span></span>
       </div>
     </div>
@@ -396,6 +398,13 @@ function load(src, done, fail) {
   s.onload = done; s.onerror = fail;
   document.head.append(s);
 }
+// How old a last close is, in weekdays since it (a close is in by the evening): 0 up to date, 1 up to a week, 2 older
+const MARK = ['\u25CF', '\u25C6', '\u25B2'];
+function fresh(date) {
+  let n = 0;
+  for (const d = new Date(date + 'T12:00:00'), t = new Date(); d.setDate(d.getDate() + 1) && d <= t;) if (d.getDay() % 6) n++;
+  return n <= 1 ? 0 : n <= 5 ? 1 : 2;
+}
 function menu(L) {
   const sel = $('switch');
   if (!L.some(e => e.slug === M)) sel.append(new Option('Pick one', '', true, true));
@@ -403,8 +412,10 @@ function menu(L) {
     const og = Object.assign(document.createElement('optgroup'), {label: g});
     for (const e of L.filter(e => e.group === g)) {
       // Without data/index.js (built before it existed) the menu comes from the page's own list, names only
-      const o = new Option(!e.symbol ? e.name : `${e.name} (${e.symbol}) · ${e.built ? 'last close ' + (e.date ? dl(e.date) : 'not known') : 'not built yet'}`, e.slug, e.slug === M, e.slug === M);
-      if (e.symbol && !e.built) o.className = 'off';
+      const f = e.built && e.date ? fresh(e.date) : null;
+      const o = new Option(!e.symbol ? e.name : `${f === null ? '\u2014' : MARK[f]} ${e.name} (${e.symbol})${e.built ? '' : ' · not built yet'}`, e.slug, e.slug === M, e.slug === M);
+      if (e.symbol) o.className = f === null ? 'off' : 'f' + f;
+      if (f !== null) o.title = 'Last close ' + dl(e.date);
       og.append(o);
     }
     sel.append(og);
@@ -1172,7 +1183,10 @@ document.querySelectorAll('h2[data-k],h3[data-k]').forEach(h => h.insertAdjacent
 $('src').textContent = D.ticker;
 {
   const last = C[N - 1], dd = D.pctAth[N - 1], day = last / C[N - 2] - 1, S = D.similar;
-  $('asof').textContent = `${D.name} (${D.ticker}) · daily closes to ${dl(dates[N - 1])}`;
+  const fz = fresh(dates[N - 1]);
+  $('asof').textContent = `${D.name} (${D.ticker}) · last close `;
+  $('asof').append(Object.assign(document.createElement('b'), {className: 'f' + fz, textContent: `${MARK[fz]} ${dl(dates[N - 1])}${['', ', up to a week old', ', more than a week old'][fz]}`}));
+  $('asof').classList.add('fresh');
   const the = (here() || D.pages?.find(p => p.here))?.group === 'Indices' ? 'The ' : '';  // the Nasdaq Composite, but Gold (futures) and Apple
   $('title').textContent = dd === 0 ? `${the}${D.name} closed at a record`
     : `${the}${D.name} is ${Math.abs(dd * 100).toFixed(1)}% below its record${dd <= -0.2 ? ', a bear-market fall' : ''}`;
