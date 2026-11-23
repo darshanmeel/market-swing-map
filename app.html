@@ -534,6 +534,10 @@ const median = a => { const s = [...a].sort((x, y) => x - y), m = s.length >> 1;
 
 // Record close: above every earlier close, including history before the data shown here.
 const prevMax = []; { let m = D.athBefore; for (let i = 0; i < N; i++) { prevMax.push(m); m = Math.max(m, C[i]); } }
+// Highest close of the last y years, as an index: the record can be decades older than the data shown (the dollar index: 1985)
+const hiIn = y => { const d = new Date(dates[N - 1]); d.setFullYear(d.getFullYear() - y); const s = d.toISOString().slice(0, 10); let k = N - 1; for (let i = N - 1; i >= 0 && dates[i] >= s; i--) if (C[i] > C[k]) k = i; return k; };
+const H10 = hiIn(10), H5 = hiIn(5), oldRec = D.athDate < (d => (d.setFullYear(d.getFullYear() - 10), d.toISOString().slice(0, 10)))(new Date(dates[N - 1])), fromHi = k => `${pc(C[N - 1] / C[k] - 1)} from the ${dl(dates[k])} high of ${money(C[k])}`;
+const hiNote = [...(oldRec ? [`10-year high: ${fromHi(H10)}`] : []), ...(H5 !== H10 ? [`5-year high: ${fromHi(H5)}`] : [])].join('<br>');
 
 function zigzag(t) {
   // Same rule as the swing size control: running extreme until a reversal of t confirms it.
@@ -594,7 +598,7 @@ function render() {
   const y10 = new Date(dates[N - 1]); y10.setFullYear(y10.getFullYear() - 10);
   const r10 = (D.rank || []).filter(f => !f.now && f.peak >= y10.toISOString().slice(0, 10));
   const dMax = Math.ceil(Math.max(1, -ddNow * 100, ...r10.map(f => -f.depth)) / 10) * 10, deeper10 = r10.filter(f => f.depth < ddNow * 100).length;
-  const t2 = tile(`Below the record${tip('ath')}`, pc(ddNow), fink, `${deeper10} of ${pl(r10.length, 'fall')} of 10%+ in 10 years went deeper. Needs ${pc(1 / (1 + ddNow) - 1)} to get back.`,
+  const t2 = tile(`Below the record${tip('ath')}`, pc(ddNow), fink, `${deeper10} of ${pl(r10.length, 'fall')} of 10%+ in 10 years went deeper. Needs ${pc(1 / (1 + ddNow) - 1)} to get back.` + (hiNote ? `<span class="sp2">${hiNote}</span>` : ''),
     `<div class="mini" role="img" aria-label="Today's fall against the falls of the last 10 years"><i class="trk"></i><i class="fill" style="width:${(-ddNow * 100 / dMax * 100).toFixed(1)}%"></i>` +
     r10.map(f => `<i class="tick" style="left:${(-f.depth / dMax * 100).toFixed(1)}%" title="${mon(f.peak)}: −${(-f.depth).toFixed(1)}%"></i>`).join('') + '</div>',
     ['0%', 'ticks: past 10y falls', `−${dMax}%`]);
@@ -715,8 +719,10 @@ function render() {
     text: `<b>−${Math.abs(f.depth).toFixed(0)}%</b>`, font: {size: 11, color: fallInk}}));
   if (nowLab) labels.push({x: dates[N - 1], y: ddNow * 100, yref: 'y2', xanchor: 'right', yanchor: 'top', yshift: -2, xshift: -4, showarrow: false, text: `<b>${pc(ddNow, 0)} now</b>`, font: {size: 11, color: fallInk}});
   labels.push({xref: 'paper', x: 0, xanchor: 'left', yref: 'paper', y: .22, yanchor: 'bottom', yshift: 4, showarrow: false, text: '<b>Below the record close</b>', font: {size: 12, color: css('--ink2'), family: 'system-ui,sans-serif'}},
-    {xref: 'paper', x: 0, xanchor: 'left', xshift: 6, y: Math.log10(D.athValue), showarrow: false, text: `Record ${money(D.athValue)}`, font: {size: 11, color: css('--gold-ink')},
+    {xref: 'paper', x: 0, xanchor: 'left', xshift: 6, y: Math.log10(D.athValue), showarrow: false, text: `Record ${money(D.athValue)}${oldRec ? ` · ${mon(D.athDate)}, before this data` : ''}`, font: {size: 11, color: css('--gold-ink')},
      bgcolor: '#fff', bordercolor: css('--gold'), borderwidth: 1, borderpad: 3});
+  if (oldRec) { traces.push({x: [dates[s0], dates[N - 1]], y: [C[H10], C[H10]], mode: 'lines', line: {color: muted, width: 1, dash: '6px,4px'}, hoverinfo: 'skip'});
+    labels.push({xref: 'paper', x: 0, xanchor: 'left', xshift: 6, y: Math.log10(C[H10]), showarrow: false, text: `10-year high ${money(C[H10])} · ${mon(dates[H10])}`, font: {size: 11, color: muted}, bgcolor: '#fff', bordercolor: muted, borderwidth: 1, borderpad: 3}); }
   traces.push({x, y: ddy, yaxis: 'y2', type: 'scatter', mode: 'lines', fill: 'tozeroy', line: {color: fallC, width: 1}, fillcolor: 'rgba(184,74,14,.16)', hoverinfo: 'skip'});
   const mono = {family: 'ui-monospace,Consolas,monospace', size: 12, color: muted};
   const hl = {bgcolor: '#15181D', bordercolor: '#15181D', font: {color: '#fff', family: 'system-ui,sans-serif', size: 12}};
@@ -1227,12 +1233,13 @@ $('src').textContent = D.ticker;
   $('asof').classList.add('fresh');
   const the = (here() || D.pages?.find(p => p.here))?.group === 'Indices' ? 'The ' : '';  // the Nasdaq Composite, but Gold (futures) and Apple
   $('title').textContent = dd === 0 ? `${the}${D.name} closed at a record`
-    : `${the}${D.name} is ${Math.abs(dd * 100).toFixed(1)}% below its record${dd <= -0.2 ? ', a bear-market fall' : ''}`;
+    : `${the}${D.name} is ${Math.abs(dd * 100).toFixed(1)}% below its ${oldRec ? D.athDate.slice(0, 4) + ' ' : ''}record${dd <= -0.2 ? ', a bear-market fall' : ''}`;
   const days = S ? S.days : Math.round((new Date(dates[N - 1]) - new Date(D.athDate)) / 864e5);
   const yrs = S && S.rows.length ? S.scen[0].cases.map(c => c.fwd[252]).filter(v => v != null) : null;
   $('verdict').textContent = `It closed at ${money(last)} on ${dl(dates[N - 1])} (${pc(day, 2)} on the day)` +
     (dd === 0 ? ', a new record.' : `, ${pl(days, 'day')} after the ${dl(D.athDate)} record of ${money(D.athValue)}.`) +
-    (dd < 0 && yrs ? ` ${pl(S.rows.length, 'earlier fall')} got this deep since ${S.since}; ${(k => k === 1 ? '1 was' : k + ' were')(yrs.filter(v => v > 0).length)} higher a year later.` : '');
+    (dd < 0 && yrs ? ` ${pl(S.rows.length, 'earlier fall')} got this deep since ${S.since}; ${(k => k === 1 ? '1 was' : k + ' were')(yrs.filter(v => v > 0).length)} higher a year later.` : '') +
+    (oldRec ? ` The record is from ${D.athDate.slice(0, 4)}, before the 10 years shown here: it is ${fromHi(H10)}${H5 !== H10 ? ` and ${fromHi(H5)}` : ''}.` : '');
 }
 $('falls').innerHTML = D.fallsTable; $('fallsCount').textContent = $('falls').querySelectorAll('tbody tr').length; $('daily').innerHTML = D.dailyTable;
 $('facts').innerHTML = D.facts.map(([k, v]) => `<dt>${k}</dt><dd>${String(v).replace(/\b\d{4}-\d{2}-\d{2}\b/g, dl)}</dd>`).join('');

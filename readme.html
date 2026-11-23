@@ -30,7 +30,7 @@ a{color:var(--rise)}
 <p class="lede">One offline page for every market: how far it is below its all-time high, its real turning points, and what
 every past fall this deep did next. Each weekday after the close a new guess, a year ahead, is saved and scored against
 what really happens.</p>
-<p>It covers about 620 markets, listed in <code>markets.csv</code> and grouped in the <b>Index, stock or commodity</b> list at the top of the page:</p>
+<p>It covers about 660 markets, listed in <code>markets.csv</code> and grouped in the <b>Index, stock or commodity</b> list at the top of the page:</p>
 <ul>
 <li><b>Indices:</b> Nasdaq Composite, Nasdaq-100, S&amp;P 500, Dow Jones, Dow Transports, Russell 2000, NYSE Composite,
 DAX 40, FTSE 100, CAC 40, Euro Stoxx 50, Stoxx Europe 600, Nikkei 225, KOSPI, Hang Seng, Shanghai Composite, Sensex,
@@ -42,8 +42,10 @@ heating oil, corn, wheat, soybeans, coffee, sugar, cocoa, cotton, live cattle an
 futures, and the US Dollar Index. Like indices, read at 8% reversals. Futures closes are the front contract, so a roll can leave a small jump.</li>
 <li><b>ETFs:</b> commodity and futures-based funds (gold, silver, miners, oil, natural gas, broad commodities, agriculture, copper, uranium,
 spot Bitcoin), broad stock funds, Treasury and corporate bond funds, sector funds and two Europe funds.</li>
-<li><b>Companies:</b> the Nasdaq-100 and the 30 Dow stocks.</li>
-<li><b>S&amp;P 500:</b> the S&amp;P 500 members not already under Companies.</li>
+<li><b>Dow 30:</b> the 30 Dow Jones stocks.</li>
+<li><b>S&amp;P 500:</b> the other S&amp;P 500 members.</li>
+<li><b>Other US-listed:</b> Nasdaq-100 stocks outside the S&amp;P 500, among them foreign companies listed in the US (ASML, Arm, AstraZeneca, PDD, Shopify).</li>
+<li><b>DAX 40:</b> the German blue chips, priced in euros on Xetra.</li>
 </ul>
 <p>
 Every tile, chart and table has an <b>i</b> button that explains it in plain words.</p>
@@ -73,7 +75,7 @@ a market not built yet gets a <b>Build now</b> button and a built one a small <b
 is done. One build runs at a time, for at most 30 minutes, and only for markets in <code>markets.csv</code>. Opened from disk, the page shows the command
 and the Copy button only. Ctrl+C stops the server.</p>
 <p><b>Add a company or index:</b> <code>python market_highs.py --add "SPOT" "Spotify"</code> adds the Yahoo symbol and name to
-<code>markets.csv</code> (group Companies; <code>--group "Indices"</code> for an index) and builds it. A symbol Yahoo has no data for is not added. Only the new market's history is downloaded;
+<code>markets.csv</code> (group Other US-listed; <code>--group "S&amp;P 500"</code> for a member; <code>--group "Indices"</code> for an index) and builds it. A symbol Yahoo has no data for is not added. Only the new market's history is downloaded;
 the 23:00 run includes it from then on, and it is in the list straight away.</p>
 
 <h2 id="home">The home page</h2>

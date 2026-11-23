@@ -19,129 +19,193 @@ symbol,name,group
 ^NSEI,Nifty 50,Indices
 ^GSPTSE,S&P/TSX (Canada),Indices
 ^AXJO,ASX 200 (Australia),Indices
+^MDAXI,MDAX (Germany mid caps),Indices
+^TECDAX,TecDAX (Germany tech),Indices
+^FTMC,FTSE 250 (UK mid caps),Indices
+^IBEX,IBEX 35 (Spain),Indices
+FTSEMIB.MI,FTSE MIB (Italy),Indices
+^AEX,AEX (Netherlands),Indices
+^SSMI,SMI (Switzerland),Indices
+^BFX,BEL 20 (Belgium),Indices
+^OMX,OMX Stockholm 30 (Sweden),Indices
+^OMXC25,OMX Copenhagen 25 (Denmark),Indices
+^ATX,ATX (Austria),Indices
+PSI20.LS,PSI (Portugal),Indices
+^ISEQ,ISEQ All-Share (Ireland),Indices
 GC=F,Gold (futures),Commodities and crypto
 SI=F,Silver (futures),Commodities and crypto
 CL=F,WTI crude oil (futures),Commodities and crypto
 BTC-USD,Bitcoin,Commodities and crypto
-AAPL,Apple,Companies
-ABNB,Airbnb,Companies
-ADBE,Adobe,Companies
-ADI,Analog Devices,Companies
-ADP,ADP,Companies
-ADSK,Autodesk,Companies
-AEP,American Electric Power,Companies
-AMAT,Applied Materials,Companies
-AMD,AMD,Companies
-AMGN,Amgen,Companies
-AMZN,Amazon,Companies
-APP,AppLovin,Companies
-ARM,Arm Holdings,Companies
-ASML,ASML,Companies
-AVGO,Broadcom,Companies
-AXON,Axon,Companies
-AXP,American Express,Companies
-AZN,AstraZeneca,Companies
-BA,Boeing,Companies
-BKNG,Booking Holdings,Companies
-BKR,Baker Hughes,Companies
-CAT,Caterpillar,Companies
-CCEP,Coca-Cola Europacific,Companies
-CDNS,Cadence Design,Companies
-CEG,Constellation Energy,Companies
-CHTR,Charter Communications,Companies
-CMCSA,Comcast,Companies
-COST,Costco,Companies
-CPRT,Copart,Companies
-CRM,Salesforce,Companies
-CRWD,CrowdStrike,Companies
-CSCO,Cisco,Companies
-CSGP,CoStar,Companies
-CSX,CSX,Companies
-CTAS,Cintas,Companies
-CTSH,Cognizant,Companies
-CVX,Chevron,Companies
-DASH,DoorDash,Companies
-DDOG,Datadog,Companies
-DIS,Disney,Companies
-DXCM,Dexcom,Companies
-EXC,Exelon,Companies
-FANG,Diamondback Energy,Companies
-FAST,Fastenal,Companies
-FTNT,Fortinet,Companies
-GEHC,GE HealthCare,Companies
-GFS,GlobalFoundries,Companies
-GILD,Gilead,Companies
-GOOGL,Alphabet,Companies
-GS,Goldman Sachs,Companies
-HD,Home Depot,Companies
-HON,Honeywell,Companies
-IBM,IBM,Companies
-IDXX,IDEXX,Companies
-INTC,Intel,Companies
-INTU,Intuit,Companies
-ISRG,Intuitive Surgical,Companies
-JNJ,Johnson & Johnson,Companies
-JPM,JPMorgan Chase,Companies
-KDP,Keurig Dr Pepper,Companies
-KHC,Kraft Heinz,Companies
-KLAC,KLA,Companies
-KO,Coca-Cola,Companies
-LIN,Linde,Companies
-LRCX,Lam Research,Companies
-LULU,Lululemon,Companies
-MAR,Marriott,Companies
-MCD,McDonald's,Companies
-MCHP,Microchip,Companies
-MDLZ,Mondelez,Companies
-MELI,MercadoLibre,Companies
-META,Meta,Companies
-MMM,3M,Companies
-MNST,Monster Beverage,Companies
-MRK,Merck,Companies
-MRVL,Marvell,Companies
-MSFT,Microsoft,Companies
-MSTR,Strategy (MicroStrategy),Companies
-MU,Micron,Companies
-NFLX,Netflix,Companies
-NKE,Nike,Companies
-NVDA,Nvidia,Companies
-NXPI,NXP,Companies
-ODFL,Old Dominion,Companies
-ON,ON Semiconductor,Companies
-ORLY,O'Reilly Automotive,Companies
-PANW,Palo Alto Networks,Companies
-PAYX,Paychex,Companies
-PCAR,Paccar,Companies
-PDD,PDD Holdings,Companies
-PEP,PepsiCo,Companies
-PG,Procter & Gamble,Companies
-PLTR,Palantir,Companies
-PYPL,PayPal,Companies
-QCOM,Qualcomm,Companies
-REGN,Regeneron,Companies
-ROP,Roper,Companies
-ROST,Ross Stores,Companies
-SBUX,Starbucks,Companies
-SHOP,Shopify,Companies
-SHW,Sherwin-Williams,Companies
-SNPS,Synopsys,Companies
-TEAM,Atlassian,Companies
-TMUS,T-Mobile US,Companies
-TRI,Thomson Reuters,Companies
-TRV,Travelers,Companies
-TSLA,Tesla,Companies
-TTD,The Trade Desk,Companies
-TTWO,Take-Two,Companies
-TXN,Texas Instruments,Companies
-UNH,UnitedHealth,Companies
-V,Visa,Companies
-VRSK,Verisk,Companies
-VRTX,Vertex,Companies
-VZ,Verizon,Companies
-WDAY,Workday,Companies
-WMT,Walmart,Companies
-XEL,Xcel Energy,Companies
-ZS,Zscaler,Companies
+BZ=F,Brent crude oil (futures),Commodities and crypto
+NG=F,Natural gas (futures),Commodities and crypto
+RB=F,Gasoline (futures),Commodities and crypto
+HO=F,Heating oil (futures),Commodities and crypto
+HG=F,Copper (futures),Commodities and crypto
+PL=F,Platinum (futures),Commodities and crypto
+PA=F,Palladium (futures),Commodities and crypto
+ZC=F,Corn (futures),Commodities and crypto
+ZW=F,Wheat (futures),Commodities and crypto
+ZS=F,Soybeans (futures),Commodities and crypto
+KC=F,Coffee (futures),Commodities and crypto
+SB=F,Sugar (futures),Commodities and crypto
+CC=F,Cocoa (futures),Commodities and crypto
+CT=F,Cotton (futures),Commodities and crypto
+LE=F,Live cattle (futures),Commodities and crypto
+HE=F,Lean hogs (futures),Commodities and crypto
+ES=F,S&P 500 E-mini (futures),Futures
+NQ=F,Nasdaq-100 E-mini (futures),Futures
+YM=F,Dow E-mini (futures),Futures
+RTY=F,Russell 2000 E-mini (futures),Futures
+ZN=F,10-year US Treasury note (futures),Futures
+ZB=F,30-year US Treasury bond (futures),Futures
+6E=F,Euro (futures),Futures
+6J=F,Japanese yen (futures),Futures
+DX-Y.NYB,US Dollar Index,Futures
+GLD,SPDR Gold Shares,ETFs
+SLV,iShares Silver Trust,ETFs
+GDX,VanEck Gold Miners,ETFs
+USO,United States Oil Fund,ETFs
+UNG,United States Natural Gas Fund,ETFs
+DBC,Invesco DB Commodity Index,ETFs
+DBA,Invesco DB Agriculture,ETFs
+PDBC,Invesco Optimum Yield Diversified Commodity,ETFs
+CPER,United States Copper Index Fund,ETFs
+URA,Global X Uranium,ETFs
+IBIT,iShares Bitcoin Trust,ETFs
+SPY,SPDR S&P 500,ETFs
+QQQ,Invesco QQQ (Nasdaq-100),ETFs
+IWM,iShares Russell 2000,ETFs
+DIA,SPDR Dow Jones Industrial Average,ETFs
+VTI,Vanguard Total Stock Market,ETFs
+EFA,iShares MSCI EAFE,ETFs
+EEM,iShares MSCI Emerging Markets,ETFs
+TLT,iShares 20+ Year Treasury Bond,ETFs
+IEF,iShares 7-10 Year Treasury Bond,ETFs
+HYG,iShares High Yield Corporate Bond,ETFs
+LQD,iShares Investment Grade Corporate Bond,ETFs
+TIP,iShares TIPS Bond,ETFs
+UUP,Invesco DB US Dollar Index Bullish,ETFs
+VNQ,Vanguard Real Estate,ETFs
+XLE,Energy Select Sector SPDR,ETFs
+XLF,Financial Select Sector SPDR,ETFs
+XLK,Technology Select Sector SPDR,ETFs
+XLV,Health Care Select Sector SPDR,ETFs
+XLI,Industrial Select Sector SPDR,ETFs
+XLU,Utilities Select Sector SPDR,ETFs
+XLP,Consumer Staples Select Sector SPDR,ETFs
+XLY,Consumer Discretionary Select Sector SPDR,ETFs
+SMH,VanEck Semiconductor,ETFs
+KRE,SPDR S&P Regional Banking,ETFs
+XBI,SPDR S&P Biotech,ETFs
+ARKK,ARK Innovation,ETFs
+VGK,Vanguard FTSE Europe,ETFs
+EZU,iShares MSCI Eurozone,ETFs
+AAPL,Apple,Dow 30
+AMGN,Amgen,Dow 30
+AMZN,Amazon,Dow 30
+AXP,American Express,Dow 30
+BA,Boeing,Dow 30
+CAT,Caterpillar,Dow 30
+CRM,Salesforce,Dow 30
+CSCO,Cisco,Dow 30
+CVX,Chevron,Dow 30
+DIS,Disney,Dow 30
+GS,Goldman Sachs,Dow 30
+HD,Home Depot,Dow 30
+HON,Honeywell,Dow 30
+IBM,IBM,Dow 30
+JNJ,Johnson & Johnson,Dow 30
+JPM,JPMorgan Chase,Dow 30
+KO,Coca-Cola,Dow 30
+MCD,McDonald's,Dow 30
+MMM,3M,Dow 30
+MRK,Merck,Dow 30
+MSFT,Microsoft,Dow 30
+NKE,Nike,Dow 30
+NVDA,Nvidia,Dow 30
+PG,Procter & Gamble,Dow 30
+SHW,Sherwin-Williams,Dow 30
+TRV,Travelers,Dow 30
+UNH,UnitedHealth,Dow 30
+V,Visa,Dow 30
+VZ,Verizon,Dow 30
+WMT,Walmart,Dow 30
+ABNB,Airbnb,S&P 500
+ADBE,Adobe,S&P 500
+ADI,Analog Devices,S&P 500
+ADP,ADP,S&P 500
+ADSK,Autodesk,S&P 500
+AEP,American Electric Power,S&P 500
+AMAT,Applied Materials,S&P 500
+AMD,AMD,S&P 500
+APP,AppLovin,S&P 500
+AVGO,Broadcom,S&P 500
+AXON,Axon,S&P 500
+BKNG,Booking Holdings,S&P 500
+BKR,Baker Hughes,S&P 500
+CDNS,Cadence Design,S&P 500
+CEG,Constellation Energy,S&P 500
+CHTR,Charter Communications,S&P 500
+CMCSA,Comcast,S&P 500
+COST,Costco,S&P 500
+CPRT,Copart,S&P 500
+CRWD,CrowdStrike,S&P 500
+CSGP,CoStar,S&P 500
+CSX,CSX,S&P 500
+CTAS,Cintas,S&P 500
+CTSH,Cognizant,S&P 500
+DASH,DoorDash,S&P 500
+DDOG,Datadog,S&P 500
+DXCM,Dexcom,S&P 500
+EXC,Exelon,S&P 500
+FANG,Diamondback Energy,S&P 500
+FAST,Fastenal,S&P 500
+FTNT,Fortinet,S&P 500
+GEHC,GE HealthCare,S&P 500
+GILD,Gilead,S&P 500
+GOOGL,Alphabet,S&P 500
+IDXX,IDEXX,S&P 500
+INTC,Intel,S&P 500
+INTU,Intuit,S&P 500
+ISRG,Intuitive Surgical,S&P 500
+KDP,Keurig Dr Pepper,S&P 500
+KHC,Kraft Heinz,S&P 500
+KLAC,KLA,S&P 500
+LIN,Linde,S&P 500
+LRCX,Lam Research,S&P 500
+LULU,Lululemon,S&P 500
+MAR,Marriott,S&P 500
+MCHP,Microchip,S&P 500
+MDLZ,Mondelez,S&P 500
+META,Meta,S&P 500
+MNST,Monster Beverage,S&P 500
+MU,Micron,S&P 500
+NFLX,Netflix,S&P 500
+NXPI,NXP,S&P 500
+ODFL,Old Dominion,S&P 500
+ON,ON Semiconductor,S&P 500
+ORLY,O'Reilly Automotive,S&P 500
+PANW,Palo Alto Networks,S&P 500
+PAYX,Paychex,S&P 500
+PCAR,Paccar,S&P 500
+PEP,PepsiCo,S&P 500
+PLTR,Palantir,S&P 500
+PYPL,PayPal,S&P 500
+QCOM,Qualcomm,S&P 500
+REGN,Regeneron,S&P 500
+ROP,Roper,S&P 500
+ROST,Ross Stores,S&P 500
+SBUX,Starbucks,S&P 500
+SNPS,Synopsys,S&P 500
+TMUS,T-Mobile US,S&P 500
+TSLA,Tesla,S&P 500
+TTD,The Trade Desk,S&P 500
+TTWO,Take-Two,S&P 500
+TXN,Texas Instruments,S&P 500
+VRSK,Verisk,S&P 500
+VRTX,Vertex,S&P 500
+WDAY,Workday,S&P 500
+XEL,Xcel Energy,S&P 500
 A,Agilent Technologies,S&P 500
 ABBV,AbbVie,S&P 500
 ABT,Abbott Laboratories,S&P 500
@@ -539,80 +603,58 @@ YUM,Yum! Brands,S&P 500
 ZBH,Zimmer Biomet,S&P 500
 ZBRA,Zebra Technologies,S&P 500
 ZTS,Zoetis,S&P 500
-BZ=F,Brent crude oil (futures),Commodities and crypto
-NG=F,Natural gas (futures),Commodities and crypto
-RB=F,Gasoline (futures),Commodities and crypto
-HO=F,Heating oil (futures),Commodities and crypto
-HG=F,Copper (futures),Commodities and crypto
-PL=F,Platinum (futures),Commodities and crypto
-PA=F,Palladium (futures),Commodities and crypto
-ZC=F,Corn (futures),Commodities and crypto
-ZW=F,Wheat (futures),Commodities and crypto
-ZS=F,Soybeans (futures),Commodities and crypto
-KC=F,Coffee (futures),Commodities and crypto
-SB=F,Sugar (futures),Commodities and crypto
-CC=F,Cocoa (futures),Commodities and crypto
-CT=F,Cotton (futures),Commodities and crypto
-LE=F,Live cattle (futures),Commodities and crypto
-HE=F,Lean hogs (futures),Commodities and crypto
-ES=F,S&P 500 E-mini (futures),Futures
-NQ=F,Nasdaq-100 E-mini (futures),Futures
-YM=F,Dow E-mini (futures),Futures
-RTY=F,Russell 2000 E-mini (futures),Futures
-ZN=F,10-year US Treasury note (futures),Futures
-ZB=F,30-year US Treasury bond (futures),Futures
-6E=F,Euro (futures),Futures
-6J=F,Japanese yen (futures),Futures
-DX-Y.NYB,US Dollar Index,Futures
-GLD,SPDR Gold Shares,ETFs
-SLV,iShares Silver Trust,ETFs
-GDX,VanEck Gold Miners,ETFs
-USO,United States Oil Fund,ETFs
-UNG,United States Natural Gas Fund,ETFs
-DBC,Invesco DB Commodity Index,ETFs
-DBA,Invesco DB Agriculture,ETFs
-PDBC,Invesco Optimum Yield Diversified Commodity,ETFs
-CPER,United States Copper Index Fund,ETFs
-URA,Global X Uranium,ETFs
-IBIT,iShares Bitcoin Trust,ETFs
-SPY,SPDR S&P 500,ETFs
-QQQ,Invesco QQQ (Nasdaq-100),ETFs
-IWM,iShares Russell 2000,ETFs
-DIA,SPDR Dow Jones Industrial Average,ETFs
-VTI,Vanguard Total Stock Market,ETFs
-EFA,iShares MSCI EAFE,ETFs
-EEM,iShares MSCI Emerging Markets,ETFs
-TLT,iShares 20+ Year Treasury Bond,ETFs
-IEF,iShares 7-10 Year Treasury Bond,ETFs
-HYG,iShares High Yield Corporate Bond,ETFs
-LQD,iShares Investment Grade Corporate Bond,ETFs
-TIP,iShares TIPS Bond,ETFs
-UUP,Invesco DB US Dollar Index Bullish,ETFs
-VNQ,Vanguard Real Estate,ETFs
-XLE,Energy Select Sector SPDR,ETFs
-XLF,Financial Select Sector SPDR,ETFs
-XLK,Technology Select Sector SPDR,ETFs
-XLV,Health Care Select Sector SPDR,ETFs
-XLI,Industrial Select Sector SPDR,ETFs
-XLU,Utilities Select Sector SPDR,ETFs
-XLP,Consumer Staples Select Sector SPDR,ETFs
-XLY,Consumer Discretionary Select Sector SPDR,ETFs
-SMH,VanEck Semiconductor,ETFs
-KRE,SPDR S&P Regional Banking,ETFs
-XBI,SPDR S&P Biotech,ETFs
-ARKK,ARK Innovation,ETFs
-^MDAXI,MDAX (Germany mid caps),Indices
-^TECDAX,TecDAX (Germany tech),Indices
-^FTMC,FTSE 250 (UK mid caps),Indices
-^IBEX,IBEX 35 (Spain),Indices
-FTSEMIB.MI,FTSE MIB (Italy),Indices
-^AEX,AEX (Netherlands),Indices
-^SSMI,SMI (Switzerland),Indices
-^BFX,BEL 20 (Belgium),Indices
-^OMX,OMX Stockholm 30 (Sweden),Indices
-^OMXC25,OMX Copenhagen 25 (Denmark),Indices
-^ATX,ATX (Austria),Indices
-PSI20.LS,PSI (Portugal),Indices
-^ISEQ,ISEQ All-Share (Ireland),Indices
-VGK,Vanguard FTSE Europe,ETFs
-EZU,iShares MSCI Eurozone,ETFs
+ARM,Arm Holdings,Other US-listed
+ASML,ASML,Other US-listed
+AZN,AstraZeneca,Other US-listed
+CCEP,Coca-Cola Europacific,Other US-listed
+GFS,GlobalFoundries,Other US-listed
+MELI,MercadoLibre,Other US-listed
+MRVL,Marvell,Other US-listed
+MSTR,Strategy (MicroStrategy),Other US-listed
+PDD,PDD Holdings,Other US-listed
+SHOP,Shopify,Other US-listed
+TEAM,Atlassian,Other US-listed
+TRI,Thomson Reuters,Other US-listed
+ZS,Zscaler,Other US-listed
+ADS.DE,adidas,DAX 40
+AIR.DE,Airbus,DAX 40
+ALV.DE,Allianz,DAX 40
+BAS.DE,BASF,DAX 40
+BAYN.DE,Bayer,DAX 40
+BEI.DE,Beiersdorf,DAX 40
+BMW.DE,BMW,DAX 40
+BNR.DE,Brenntag,DAX 40
+CBK.DE,Commerzbank,DAX 40
+CON.DE,Continental,DAX 40
+DTG.DE,Daimler Truck,DAX 40
+DBK.DE,Deutsche Bank,DAX 40
+DB1.DE,Deutsche Börse,DAX 40
+DHL.DE,DHL Group,DAX 40
+DTE.DE,Deutsche Telekom,DAX 40
+EOAN.DE,E.ON,DAX 40
+FRE.DE,Fresenius,DAX 40
+FME.DE,Fresenius Medical Care,DAX 40
+G1A.DE,GEA Group,DAX 40
+HNR1.DE,Hannover Re,DAX 40
+HEI.DE,Heidelberg Materials,DAX 40
+HEN3.DE,Henkel,DAX 40
+IFX.DE,Infineon,DAX 40
+MBG.DE,Mercedes-Benz Group,DAX 40
+MRK.DE,Merck KGaA,DAX 40
+MTX.DE,MTU Aero Engines,DAX 40
+MUV2.DE,Munich Re,DAX 40
+P911.DE,Porsche AG,DAX 40
+PAH3.DE,Porsche SE,DAX 40
+QIA.DE,Qiagen,DAX 40
+RHM.DE,Rheinmetall,DAX 40
+RWE.DE,RWE,DAX 40
+SAP.DE,SAP,DAX 40
+SRT3.DE,Sartorius,DAX 40
+SIE.DE,Siemens,DAX 40
+ENR.DE,Siemens Energy,DAX 40
+SHL.DE,Siemens Healthineers,DAX 40
+SY1.DE,Symrise,DAX 40
+VOW3.DE,Volkswagen,DAX 40
+VNA.DE,Vonovia,DAX 40
+ZAL.DE,Zalando,DAX 40
+G24.DE,Scout24,DAX 40

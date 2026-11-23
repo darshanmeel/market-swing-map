@@ -1,7 +1,7 @@
 """Below the Record per market: turning points, distance from highs, past falls this deep, and a saved guess each day.
 
 Usage: python market_highs.py [TICKER ...]   (Yahoo symbols, default: every market in markets.csv)
-       python market_highs.py --add SYMBOL "Name" [--group GROUP]   (adds it to markets.csv, group "Companies"
+       python market_highs.py --add SYMBOL "Name" [--group GROUP]   (adds it to markets.csv, group "Other US-listed"
        unless given, then builds it; a symbol Yahoo has no data for is not added)
        python market_highs.py --summary-only   (only the home page numbers, from the stored closes: no download)
        python market_highs.py --serve [PORT]   (serves this folder on http://127.0.0.1:PORT, default 8765, so app.html
@@ -446,6 +446,7 @@ def overview(d, every=None, s=None):
         out[f"r{y}"] = round(float((d.close.iloc[-1] / past.iloc[-1]) ** (1 / y) - 1), 4) if len(past) else None  # 5y and 10y: per year
         if y > 1:
             out[f"dd{y}"] = round(min(float(d.pct_ATH[d.index > then].min()), 0), 4)  # shorter history: since listing
+            out[f"hi{y}"] = round(float(d.close.iloc[-1] / d.close[d.index > then].max() - 1), 4)  # below the 5y / 10y high
     out["tr"] = {}
     for t in TREND_SIZES:
         z = trend(c, prev_max, t / 100)
@@ -596,7 +597,8 @@ def add(sym, name, group):
 
 def slugs(tickers):
     # Only [a-z0-9_.-]: app.html accepts nothing else in ?m=
-    return {t: re.sub(r"[^a-z0-9_.-]", "_", t.strip("^").lower()) for t in tickers}
+    # and Windows refuses files named con, aux, nul ... (Continental is CON.DE)
+    return {t: re.sub(r"^(con|prn|aux|nul|com\d|lpt\d)(?=\.|$)", r"\1_", re.sub(r"[^a-z0-9_.-]", "_", t.strip("^").lower())) for t in tickers}
 
 
 def summary_only():
@@ -620,7 +622,7 @@ def main():
     if args[:1] == ["--add"]:
         if len(args) not in (3, 5) or (len(args) == 5 and args[3] != "--group"):
             sys.exit('Usage: python market_highs.py --add SYMBOL "Name" [--group GROUP]')
-        sym, group = args[1].upper(), (args[4:] or ["Companies"])[0]
+        sym, group = args[1].upper(), (args[4:] or ["Other US-listed"])[0]
         if sym in NAMES:
             print(f"{sym} is already in markets.csv as {NAMES[sym]}.")
         elif group not in GROUPS:
