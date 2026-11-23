@@ -539,3 +539,80 @@ YUM,Yum! Brands,S&P 500
 ZBH,Zimmer Biomet,S&P 500
 ZBRA,Zebra Technologies,S&P 500
 ZTS,Zoetis,S&P 500
+BZ=F,Brent crude oil (futures),Commodities and crypto
+NG=F,Natural gas (futures),Commodities and crypto
+RB=F,Gasoline (futures),Commodities and crypto
+HO=F,Heating oil (futures),Commodities and crypto
+HG=F,Copper (futures),Commodities and crypto
+PL=F,Platinum (futures),Commodities and crypto
+PA=F,Palladium (futures),Commodities and crypto
+ZC=F,Corn (futures),Commodities and crypto
+ZW=F,Wheat (futures),Commodities and crypto
+ZS=F,Soybeans (futures),Commodities and crypto
+KC=F,Coffee (futures),Commodities and crypto
+SB=F,Sugar (futures),Commodities and crypto
+CC=F,Cocoa (futures),Commodities and crypto
+CT=F,Cotton (futures),Commodities and crypto
+LE=F,Live cattle (futures),Commodities and crypto
+HE=F,Lean hogs (futures),Commodities and crypto
+ES=F,S&P 500 E-mini (futures),Futures
+NQ=F,Nasdaq-100 E-mini (futures),Futures
+YM=F,Dow E-mini (futures),Futures
+RTY=F,Russell 2000 E-mini (futures),Futures
+ZN=F,10-year US Treasury note (futures),Futures
+ZB=F,30-year US Treasury bond (futures),Futures
+6E=F,Euro (futures),Futures
+6J=F,Japanese yen (futures),Futures
+DX-Y.NYB,US Dollar Index,Futures
+GLD,SPDR Gold Shares,ETFs
+SLV,iShares Silver Trust,ETFs
+GDX,VanEck Gold Miners,ETFs
+USO,United States Oil Fund,ETFs
+UNG,United States Natural Gas Fund,ETFs
+DBC,Invesco DB Commodity Index,ETFs
+DBA,Invesco DB Agriculture,ETFs
+PDBC,Invesco Optimum Yield Diversified Commodity,ETFs
+CPER,United States Copper Index Fund,ETFs
+URA,Global X Uranium,ETFs
+IBIT,iShares Bitcoin Trust,ETFs
+SPY,SPDR S&P 500,ETFs
+QQQ,Invesco QQQ (Nasdaq-100),ETFs
+IWM,iShares Russell 2000,ETFs
+DIA,SPDR Dow Jones Industrial Average,ETFs
+VTI,Vanguard Total Stock Market,ETFs
+EFA,iShares MSCI EAFE,ETFs
+EEM,iShares MSCI Emerging Markets,ETFs
+TLT,iShares 20+ Year Treasury Bond,ETFs
+IEF,iShares 7-10 Year Treasury Bond,ETFs
+HYG,iShares High Yield Corporate Bond,ETFs
+LQD,iShares Investment Grade Corporate Bond,ETFs
+TIP,iShares TIPS Bond,ETFs
+UUP,Invesco DB US Dollar Index Bullish,ETFs
+VNQ,Vanguard Real Estate,ETFs
+XLE,Energy Select Sector SPDR,ETFs
+XLF,Financial Select Sector SPDR,ETFs
+XLK,Technology Select Sector SPDR,ETFs
+XLV,Health Care Select Sector SPDR,ETFs
+XLI,Industrial Select Sector SPDR,ETFs
+XLU,Utilities Select Sector SPDR,ETFs
+XLP,Consumer Staples Select Sector SPDR,ETFs
+XLY,Consumer Discretionary Select Sector SPDR,ETFs
+SMH,VanEck Semiconductor,ETFs
+KRE,SPDR S&P Regional Banking,ETFs
+XBI,SPDR S&P Biotech,ETFs
+ARKK,ARK Innovation,ETFs
+^MDAXI,MDAX (Germany mid caps),Indices
+^TECDAX,TecDAX (Germany tech),Indices
+^FTMC,FTSE 250 (UK mid caps),Indices
+^IBEX,IBEX 35 (Spain),Indices
+FTSEMIB.MI,FTSE MIB (Italy),Indices
+^AEX,AEX (Netherlands),Indices
+^SSMI,SMI (Switzerland),Indices
+^BFX,BEL 20 (Belgium),Indices
+^OMX,OMX Stockholm 30 (Sweden),Indices
+^OMXC25,OMX Copenhagen 25 (Denmark),Indices
+^ATX,ATX (Austria),Indices
+PSI20.LS,PSI (Portugal),Indices
+^ISEQ,ISEQ All-Share (Ireland),Indices
+VGK,Vanguard FTSE Europe,ETFs
+EZU,iShares MSCI Eurozone,ETFs

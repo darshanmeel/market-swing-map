@@ -1305,10 +1305,10 @@ $('sizes').insertAdjacentHTML('beforeend', SIZES.map(v => btn(v, Math.round(v * 
 $('years').insertAdjacentHTML('beforeend', YEARS.map(v => btn(v, v + 'Y')).join(''));
 $('sizes').onclick = e => { if (e.target.dataset.v) { size = +e.target.dataset.v; render(); } };
 $('years').onclick = e => { if (e.target.dataset.v) { years = +e.target.dataset.v; render(); } };
-// Reversal from ?r= (the home page passes the size its row was read at); else 8% for indices,
+// Reversal from ?r= (the home page passes the size its row was read at); else 8% for indices and futures,
 // and 15% for companies, commodities and crypto, which swing more
 const askR = +new URLSearchParams(location.search).get('r') / 100;
-size = SIZES.includes(askR) ? askR : (here() || D.pages?.find(p => p.here))?.group === 'Indices' ? 0.08 : 0.15;
+size = SIZES.includes(askR) ? askR : ['Indices', 'Futures'].includes((here() || D.pages?.find(p => p.here))?.group) ? 0.08 : 0.15;
 render();
 // Section pills: hide the ones whose section is hidden
 if (['trackSub', 'testSub', 'btSub'].every(id => $(id).hidden)) $('trust').hidden = true;

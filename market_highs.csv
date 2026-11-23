@@ -147,3 +147,80 @@ Bitcoin,2026-11-21,57880.22,-53.6,2025-10-06
 S&P 500,2026-11-20,6910.39,-11.62,2026-10-06
 Arm Holdings,2026-11-20,152.2,-65.37,2026-06-18
 Gold (futures),2026-11-20,3515.4,-33.9,2026-01-29
+Brent crude oil (futures),2026-11-23,89.62,-38.65,2008-07-03
+Natural gas (futures),2026-11-23,3.54,-76.96,2005-12-13
+Gasoline (futures),2026-11-23,2.47,-42.21,2022-06-09
+Heating oil (futures),2026-11-23,3.82,-27.34,2026-09-15
+Copper (futures),2026-11-23,5.49,-19.3,2026-09-09
+Platinum (futures),2026-11-23,1297.7,-54.5,2026-01-26
+Palladium (futures),2026-11-23,898.5,-69.9,2021-05-03
+Corn (futures),2026-11-23,450.0,-45.86,2012-08-21
+Wheat (futures),2026-11-23,591.0,-58.53,2022-03-07
+Soybeans (futures),2026-11-23,1226.5,-30.75,2012-09-04
+Coffee (futures),2026-11-20,274.85,-37.38,2025-02-13
+Sugar (futures),2026-11-20,17.03,-51.77,2011-02-02
+Cocoa (futures),2026-11-20,5125.0,-59.21,2024-12-18
+Cotton (futures),2026-11-20,75.47,-64.92,2011-03-04
+Live cattle (futures),2026-11-20,223.0,-13.72,2026-04-30
+Lean hogs (futures),2026-11-20,52.6,-60.56,2014-07-14
+S&P 500 E-mini (futures),2026-11-23,7102.0,-9.8,2026-10-06
+Nasdaq-100 E-mini (futures),2026-11-23,25943.5,-17.6,2026-10-06
+Dow E-mini (futures),2026-11-23,49010.0,-10.06,2026-08-05
+Russell 2000 E-mini (futures),2026-11-23,2638.0,-14.21,2026-08-14
+10-year US Treasury note (futures),2026-11-23,106.47,-24.13,2020-08-04
+30-year US Treasury bond (futures),2026-11-23,107.12,-42.69,2020-03-09
+Euro (futures),2026-11-23,1.1,-31.07,2008-04-22
+Japanese yen (futures),2026-11-23,0.01,-52.34,2011-10-28
+US Dollar Index,2026-11-23,103.67,-37.06,1985-02-25
+SPDR Gold Shares,2026-11-20,322.87,-34.89,2026-01-29
+iShares Silver Trust,2026-11-20,36.97,-64.99,2026-01-28
+VanEck Gold Miners,2026-11-20,68.4,-40.95,2026-02-27
+United States Oil Fund,2026-11-20,139.63,-85.14,2008-07-14
+United States Natural Gas Fund,2026-11-20,10.56,-99.87,2008-07-01
+Invesco DB Commodity Index,2026-11-20,29.32,-36.86,2008-07-02
+Invesco DB Agriculture,2026-11-20,26.15,-39.16,2008-02-26
+Invesco Optimum Yield Diversified Commodity,2026-11-20,17.47,-30.81,2014-11-07
+United States Copper Index Fund,2026-11-20,32.92,-20.54,2026-09-22
+Global X Uranium,2026-11-20,26.79,-79.96,2011-02-02
+iShares Bitcoin Trust,2026-11-20,33.02,-53.68,2025-10-06
+SPDR S&P 500,2026-11-20,689.81,-11.46,2026-10-06
+Invesco QQQ (Nasdaq-100),2026-11-20,608.45,-19.9,2026-10-06
+iShares Russell 2000,2026-11-20,256.61,-15.89,2026-08-14
+SPDR Dow Jones Industrial Average,2026-11-20,481.08,-11.37,2026-08-05
+Vanguard Total Stock Market,2026-11-20,340.02,-11.52,2026-08-13
+iShares MSCI EAFE,2026-11-20,96.14,-11.64,2026-08-25
+iShares MSCI Emerging Markets,2026-11-20,53.84,-24.39,2026-06-22
+iShares 20+ Year Treasury Bond,2026-11-20,81.45,-52.53,2020-08-04
+iShares 7-10 Year Treasury Bond,2026-11-20,91.65,-25.52,2020-08-04
+iShares High Yield Corporate Bond,2026-11-20,76.33,-28.05,2007-09-19
+iShares Investment Grade Corporate Bond,2026-11-20,103.69,-25.48,2020-08-06
+iShares TIPS Bond,2026-11-20,105.74,-19.2,2021-11-09
+Invesco DB US Dollar Index Bullish,2026-11-20,29.62,-3.42,2022-09-27
+Vanguard Real Estate,2026-11-20,92.56,-20.21,2021-12-31
+Energy Select Sector SPDR,2026-11-20,60.51,-13.58,2026-10-30
+Financial Select Sector SPDR,2026-11-20,54.57,-7.82,2026-11-04
+Technology Select Sector SPDR,2026-11-20,149.01,-26.23,2026-10-06
+Health Care Select Sector SPDR,2026-11-20,177.24,-6.55,2026-11-04
+Industrial Select Sector SPDR,2026-11-20,156.37,-16.16,2026-08-14
+Utilities Select Sector SPDR,2026-11-20,42.69,-10.56,2026-02-27
+Consumer Staples Select Sector SPDR,2026-11-20,90.46,-2.31,2026-11-16
+Consumer Discretionary Select Sector SPDR,2026-11-20,112.46,-9.69,2026-01-12
+VanEck Semiconductor,2026-11-20,400.06,-40.19,2026-06-22
+SPDR S&P Regional Banking,2026-11-20,68.32,-13.28,2022-01-14
+SPDR S&P Biotech,2026-11-20,140.18,-19.43,2021-02-08
+ARK Innovation,2026-11-20,64.22,-58.99,2021-02-12
+MDAX (Germany mid caps),2026-11-23,28843.94,-20.49,2021-09-02
+TecDAX (Germany tech),2026-11-23,3820.56,-60.33,2000-03-10
+FTSE 250 (UK mid caps),2026-11-23,23715.47,-4.91,2026-08-28
+IBEX 35 (Spain),2026-11-23,18901.3,-6.49,2026-08-11
+FTSE MIB (Italy),2026-11-23,48277.05,-10.13,2026-08-07
+AEX (Netherlands),2026-11-23,1072.78,-6.32,2026-11-11
+SMI (Switzerland),2026-11-23,14581.34,-4.02,2026-11-16
+BEL 20 (Belgium),2026-11-23,5804.98,-5.14,2026-11-13
+OMX Stockholm 30 (Sweden),2026-11-23,3201.31,-4.72,2026-11-11
+OMX Copenhagen 25 (Denmark),2026-11-23,1930.68,-5.34,2024-09-13
+ATX (Austria),2026-11-23,6266.67,-10.63,2026-09-28
+PSI (Portugal),2026-11-23,9293.17,-4.32,2026-09-28
+ISEQ All-Share (Ireland),2026-11-23,14481.79,-3.68,2026-11-11
+Vanguard FTSE Europe,2026-11-20,82.61,-11.35,2026-08-25
+iShares MSCI Eurozone,2026-11-20,61.76,-14.21,2026-08-14
