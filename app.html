@@ -27,7 +27,7 @@ h1{font-size:36px;line-height:1.15;font-weight:700;letter-spacing:-.01em;max-wid
 .pick{font-weight:600}.pick select{font:600 15px system-ui,sans-serif;padding:8px 12px;margin-left:8px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--ink)}
 .pick select:focus-visible{outline:2px solid var(--rise);outline-offset:2px}
 .pick select{max-width:min(640px,100%)}.pick option{font-weight:400;color:var(--ink)}.pick option.off{color:#6B7280}.pick .f0{color:#15803D}.pick .f1{color:#B45309}.pick .f2{color:#B91C1C}
-.sp2{display:block;margin-top:6px}.fresh{font:12px ui-monospace,Consolas,monospace;color:var(--muted)}.fresh b{font-weight:600}.fresh .f0{color:#15803D}.fresh .f1{color:#B45309}.fresh .f2{color:#B91C1C}
+.sp2{display:block;margin-top:6px}.hi3{display:grid;grid-template-columns:auto 1fr;gap:0 10px;margin-top:4px;font-size:13px}.hi3 em{grid-column:1/-1;font-style:normal;color:var(--muted);font-size:12px;margin-bottom:6px}.tile .hi3 b{font:600 14px ui-monospace,Consolas,monospace;text-align:right;margin:0}.fresh{font:12px ui-monospace,Consolas,monospace;color:var(--muted)}.fresh b{font-weight:600}.fresh .f0{color:#15803D}.fresh .f1{color:#B45309}.fresh .f2{color:#B91C1C}
 .home{font-weight:600;color:var(--rise)}.home:focus-visible{outline:2px solid var(--rise);outline-offset:2px}
 .pickrow{display:flex;align-items:center;gap:6px 12px;flex-wrap:wrap}
 .cmd{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:16px 0 4px}
@@ -46,7 +46,7 @@ h1{font-size:36px;line-height:1.15;font-weight:700;letter-spacing:-.01em;max-wid
   border-radius:6px;cursor:pointer;color:var(--ink)}
 .seg button[aria-pressed=true]{background:var(--ink);color:#fff;border-color:var(--ink)}
 .seg button:focus-visible{outline:2px solid var(--rise);outline-offset:2px}
-.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}@media(min-width:1100px){.tiles{grid-template-columns:repeat(6,1fr)}}
 .tile{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:14px 16px;display:flex;flex-direction:column;gap:4px;min-width:0}
 .tile small{display:block;color:var(--muted);font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.06em}
 .tile b{display:block;font:600 25px/1.25 var(--mono)}.tile p{margin:0;color:var(--ink2);font-size:13px;line-height:1.45}
@@ -506,6 +506,7 @@ const pts = x => (x >= 0 ? '+' : '-') + Math.round(Math.abs(x)).toLocaleString('
 const xaxis = () => ({gridcolor: css('--line'), dtick: years === 1 ? 'M1' : years === 10 ? 'M12' : years === 5 ? 'M6' : 'M3', tickformat: '%b %Y', minor: {dtick: 'M1', showgrid: true, gridcolor: '#F1F2F4'}});
 const TIPS = {
   close: ["Latest closing price", "Move against the day before", "During US market hours: the live price"],
+  highs: ["The highest close ever, in the last 10 years and in the last 5", "How far the last close is below each", "Often the same high; they differ when the record is old"],
   ath: ["How far today is below the highest close ever", "A fall needs a bigger rise to undo it", "Down 20% needs up 25% to get back"],
   swing: ["The move since the last confirmed turning point", "Falling: drop from the last swing high", "Rising: gain from the last swing low"],
   shape: ["Compares the last two swing highs and the last two swing lows", "Higher highs and higher lows: uptrend", "Lower highs and lower lows: downtrend", "Anything else: mixed", "Depends on the reversal size: small sees recent swings, big sees large moves", "So a market can be up at 10% and down at 15%"],
@@ -537,7 +538,6 @@ const prevMax = []; { let m = D.athBefore; for (let i = 0; i < N; i++) { prevMax
 // Highest close of the last y years, as an index: the record can be decades older than the data shown (the dollar index: 1985)
 const hiIn = y => { const d = new Date(dates[N - 1]); d.setFullYear(d.getFullYear() - y); const s = d.toISOString().slice(0, 10); let k = N - 1; for (let i = N - 1; i >= 0 && dates[i] >= s; i--) if (C[i] > C[k]) k = i; return k; };
 const H10 = hiIn(10), H5 = hiIn(5), oldRec = D.athDate < (d => (d.setFullYear(d.getFullYear() - 10), d.toISOString().slice(0, 10)))(new Date(dates[N - 1])), fromHi = k => `${pc(C[N - 1] / C[k] - 1)} from the ${dl(dates[k])} high of ${money(C[k])}`;
-const hiNote = [...(oldRec ? [`10-year high: ${fromHi(H10)}`] : []), ...(H5 !== H10 ? [`5-year high: ${fromHi(H5)}`] : [])].join('<br>');
 
 function zigzag(t) {
   // Same rule as the swing size control: running extreme until a reversal of t confirms it.
@@ -598,7 +598,7 @@ function render() {
   const y10 = new Date(dates[N - 1]); y10.setFullYear(y10.getFullYear() - 10);
   const r10 = (D.rank || []).filter(f => !f.now && f.peak >= y10.toISOString().slice(0, 10));
   const dMax = Math.ceil(Math.max(1, -ddNow * 100, ...r10.map(f => -f.depth)) / 10) * 10, deeper10 = r10.filter(f => f.depth < ddNow * 100).length;
-  const t2 = tile(`Below the record${tip('ath')}`, pc(ddNow), fink, `${deeper10} of ${pl(r10.length, 'fall')} of 10%+ in 10 years went deeper. Needs ${pc(1 / (1 + ddNow) - 1)} to get back.` + (hiNote ? `<span class="sp2">${hiNote}</span>` : ''),
+  const t2 = tile(`Below the record${tip('ath')}`, pc(ddNow), fink, `${deeper10} of ${pl(r10.length, 'fall')} of 10%+ in 10 years went deeper. Needs ${pc(1 / (1 + ddNow) - 1)} to get back.`,
     `<div class="mini" role="img" aria-label="Today's fall against the falls of the last 10 years"><i class="trk"></i><i class="fill" style="width:${(-ddNow * 100 / dMax * 100).toFixed(1)}%"></i>` +
     r10.map(f => `<i class="tick" style="left:${(-f.depth / dMax * 100).toFixed(1)}%" title="${mon(f.peak)}: −${(-f.depth).toFixed(1)}%"></i>`).join('') + '</div>',
     ['0%', 'ticks: past 10y falls', `−${dMax}%`]);
@@ -638,7 +638,10 @@ function render() {
   } else
     t4 = tile(`Where it sits in the 5-year range${tip('range', 1)}`, `${Math.round(place * 100)}%`, ink,
       `0% = low ${money(lo5)} (${dl(dates[iLo])})<br>100% = high ${money(hi5)} (${dl(dates[iHi])})`, `<div class="range"><i style="left:calc(${(place * 100).toFixed(1)}% - 1px)"></i></div>`);
-  $('tiles').innerHTML = t1 + t2 + t3 + t4 + t5;
+  const hiRow = (k, v, d) => `<span>${k}</span><b style="color:${last < v ? fink : ink}">${pc(last / v - 1)}</b><em>${money(v)} on ${dl(d)}</em>`;
+  const t6 = tile(`Below the 10-year high${tip('highs')}`, pc(last / C[H10] - 1), last < C[H10] ? fink : ink, '',
+    `<div class="hi3">${hiRow('All time', D.athValue, D.athDate)}${hiRow('10 years', C[H10], dates[H10])}${hiRow('5 years', C[H5], dates[H5])}</div>`);
+  $('tiles').innerHTML = t1 + t2 + t6 + t3 + t4 + t5;
 
   // Price chart: closes on a log scale with the swing lines on top, the fall from the record below
   const small = innerWidth < 600, H = small ? 440 : 620, span0 = N - s0;
