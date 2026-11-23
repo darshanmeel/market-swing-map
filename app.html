@@ -27,7 +27,7 @@ h1{font-size:36px;line-height:1.15;font-weight:700;letter-spacing:-.01em;max-wid
 .pick{font-weight:600}.pick select{font:600 15px system-ui,sans-serif;padding:8px 12px;margin-left:8px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--ink)}
 .pick select:focus-visible{outline:2px solid var(--rise);outline-offset:2px}
 .pick select{max-width:min(640px,100%)}.pick option{font-weight:400;color:var(--ink)}.pick option.off{color:#6B7280}.pick .f0{color:#15803D}.pick .f1{color:#B45309}.pick .f2{color:#B91C1C}
-.sp2{display:block;margin-top:6px}.hi3{display:grid;grid-template-columns:auto 1fr;gap:0 10px;margin-top:4px;font-size:13px}.hi3 em{grid-column:1/-1;font-style:normal;color:var(--muted);font-size:12px;margin-bottom:6px}.tile .hi3 b{font:600 14px ui-monospace,Consolas,monospace;text-align:right;margin:0}.fresh{font:12px ui-monospace,Consolas,monospace;color:var(--muted)}.fresh b{font-weight:600}.fresh .f0{color:#15803D}.fresh .f1{color:#B45309}.fresh .f2{color:#B91C1C}
+.sp2{display:block;margin-top:6px}.hi3{display:grid;grid-template-columns:1fr auto;gap:2px 8px;align-items:center;margin-top:6px;font-size:13px}.hi3 span{grid-column:1/-1;margin-top:6px}.hi3 em{font-style:normal;color:var(--muted);font-size:12px}.hi3 .hb{height:10px;border-radius:5px;background:#F3E6DD;overflow:hidden}.hi3 .hb i{display:block;height:100%;background:var(--fall)}.tile .hi3 b{font:600 14px ui-monospace,Consolas,monospace;text-align:right;margin:0;min-width:6ch}.fresh{font:12px ui-monospace,Consolas,monospace;color:var(--muted)}.fresh b{font-weight:600}.fresh .f0{color:#15803D}.fresh .f1{color:#B45309}.fresh .f2{color:#B91C1C}
 .home{font-weight:600;color:var(--rise)}.home:focus-visible{outline:2px solid var(--rise);outline-offset:2px}
 .pickrow{display:flex;align-items:center;gap:6px 12px;flex-wrap:wrap}
 .cmd{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:16px 0 4px}
@@ -638,9 +638,11 @@ function render() {
   } else
     t4 = tile(`Where it sits in the 5-year range${tip('range', 1)}`, `${Math.round(place * 100)}%`, ink,
       `0% = low ${money(lo5)} (${dl(dates[iLo])})<br>100% = high ${money(hi5)} (${dl(dates[iHi])})`, `<div class="range"><i style="left:calc(${(place * 100).toFixed(1)}% - 1px)"></i></div>`);
-  const hiRow = (k, v, d) => `<span>${k}</span><b style="color:${last < v ? fink : ink}">${pc(last / v - 1)}</b><em>${money(v)} on ${dl(d)}</em>`;
+  // One strip per high, on a shared scale so the three falls compare at a glance
+  const hMax = Math.ceil(Math.max(1, (1 - last / D.athValue) * 100) / 10) * 10;
+  const hiRow = (k, v, d) => `<span title="${money(v)} on ${dl(d)}">${k} <em>· ${money(v)}, ${mon(d)}</em></span><div class="hb"><i style="width:${(Math.max(0, 1 - last / v) * 100 / hMax * 100).toFixed(1)}%"></i></div><b style="color:${last < v ? fink : ink}">${pc(last / v - 1)}</b>`;
   const t6 = tile(`Below the 10-year high${tip('highs')}`, pc(last / C[H10] - 1), last < C[H10] ? fink : ink, '',
-    `<div class="hi3">${hiRow('All time', D.athValue, D.athDate)}${hiRow('10 years', C[H10], dates[H10])}${hiRow('5 years', C[H5], dates[H5])}</div>`);
+    `<div class="hi3" role="img" aria-label="How far the last close is below the all-time, 10-year and 5-year highs">${hiRow('All time', D.athValue, D.athDate)}${hiRow('10 years', C[H10], dates[H10])}${hiRow('5 years', C[H5], dates[H5])}</div>`, ['0%', '', `−${hMax}%`]);
   $('tiles').innerHTML = t1 + t2 + t6 + t3 + t4 + t5;
 
   // Price chart: closes on a log scale with the swing lines on top, the fall from the record below
