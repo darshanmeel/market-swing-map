@@ -7,8 +7,8 @@ Usage: python market_highs.py [TICKER ...]   (Yahoo symbols, default: every mark
        python market_highs.py --serve [PORT]   (serves this folder on http://127.0.0.1:PORT, default 8765, so app.html
        can build a market with its "Build now" button)
 Markets build in parallel, one process per CPU core; a failed market is printed and makes the exit code non-zero.
-Writes each market's data to data/<slug>.js, shown offline by the one page app.html?m=<slug>, plus highs_<slug>.html,
-a redirect to it for old links; today's numbers to market_highs.csv, and the day's guess to predictions/<slug>.json
+Writes each market's data to data/<slug>.js, shown offline by the one page app.html?m=<slug>,
+and the day's guess to predictions/<slug>.json
 (older guesses kept and scored). data/index.js lists every market for the page's menu, with the last close of each built one;
 data/summary.js holds the numbers the home page index.html shows.
 Closes are kept in data/closes.csv, so a run only downloads the latest days.
@@ -467,8 +467,7 @@ def overview(d, every=None, s=None):
 
 
 def build(t, d, slug):
-    """One market's data file, redirect and guess; runs in a worker process. Returns its row for market_highs.csv
-    and its home page numbers."""
+    """One market's data file and guess; runs in a worker process. Returns its home page numbers."""
     start = d.index[-1] - pd.DateOffset(years=SHOW_YEARS)
     # Every market in the menu, also those not rebuilt in this run
     pages = [{"name": n, "href": f"app.html?m={slug[o]}", "here": o == t, "group": g} for g, m in GROUPS.items() for o, n in m.items()]
@@ -476,13 +475,7 @@ def build(t, d, slug):
     sim = similar(d, every)
     payload = json.dumps(page_data(t, d, episodes(d, start), pages, slug[t], every, sim)).replace("</", "<\\/")
     (OUT / "data" / f"{slug[t]}.js").write_text(f"window.D = {payload};\n", encoding="utf-8")
-    # Old links, bookmarks and the scheduled task's file names keep working
-    url, title = f"app.html?m={slug[t]}", escape(f"Below the Record: {NAMES.get(t, t)}")
-    (OUT / f"highs_{slug[t]}.html").write_text(
-        f'<!doctype html>\n<meta charset="utf-8">\n<title>{title}</title>\n'
-        f'<meta http-equiv="refresh" content="0; url={url}">\n<a href="{url}">{title}</a>\n', encoding="utf-8")
-    return {"index": NAMES.get(t, t), "date": d.index[-1].date(), "close": round(d.close.iloc[-1], 2),
-            "vs ATH %": round(d.pct_ATH.iloc[-1] * 100, 2), "ATH set on": d.prev_ath_date.iloc[-1].date()}, overview(d, every, sim)
+    return overview(d, every, sim)
 
 
 def file_date(f):
@@ -643,24 +636,15 @@ def main():
     # Windows allows at most 61 worker processes
     with ProcessPoolExecutor(min(61, os.process_cpu_count() or 1, len(data))) as pool:
         jobs = {t: pool.submit(build, t, d, slug) for t, d in data.items()}
-    summary, sums, failed = [], {}, []
+    sums, failed = {}, []
     for t, job in jobs.items():
         try:
-            row, sums[t] = job.result()
-            summary.append(row)
+            sums[t] = job.result()
         except Exception as e:
             print(f"{t} failed:", file=sys.stderr)
             traceback.print_exception(e)  # includes the worker's traceback
             failed.append(t)
     write_index(slug, {t: str(data[t].index[-1].date()) for t in jobs if t not in failed}, sums)
-    if summary:
-        table = pd.DataFrame(summary)
-        print(table.to_string(index=False))
-        csv_file = OUT / "market_highs.csv"
-        if args and csv_file.exists():  # some markets only (a "Build now" click, --add): keep the other rows
-            rest = pd.read_csv(csv_file)
-            table = pd.concat([rest[~rest["index"].isin(table["index"])], table])
-        table.to_csv(csv_file, index=False)
     if failed:  # non-zero exit, so the scheduled run shows the failure
         sys.exit(f"{len(failed)} failed: {' '.join(failed)}")
 
