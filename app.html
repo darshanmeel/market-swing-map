@@ -396,16 +396,15 @@ dl.simf{display:grid;grid-template-columns:max-content 1fr;gap:5px 14px;margin:0
         </div>
         <div class="gside" id="trackFacts"></div>
       </div>
-      <div>
-        <h3 data-k="trackt">How earlier guesses are doing</h3>
+      <details><summary><h3 data-k="trackt">How earlier guesses are doing</h3></summary>
         <p class="note" style="margin:2px 0 10px">A guess is inside while the real close stays between its lowest and highest past-deeper-fall path. <span id="trackCount"></span></p>
         <div class="scroll tall"><table class="data" id="trackTable" style="min-width:820px"></table></div>
-      </div>
+      </details>
       <details><summary>Methods compared for the guess of <span id="wayDate"></span></summary><div class="scroll"><table class="data" id="wayTable"></table></div></details>
-      <details id="closeSub"><summary><h3 data-k="closest"><span id="closeTitle"></span></h3></summary>
+      <details id="closeSub" open><summary><h3 data-k="closest"><span id="closeTitle"></span></h3></summary>
         <div class="bd"><p class="note" id="closeLead" style="max-width:860px"></p><div class="cl" id="closeRows"></div></div></details>
     </div>
-    <details id="testSub"><summary><h3 data-k="test"><span id="testTitle"></span></h3></summary>
+    <details id="testSub" open><summary><h3 data-k="test"><span id="testTitle"></span></h3></summary>
       <div class="bd">
         <p class="note" style="max-width:860px">For each past fall, go back to the day it first got as deep as today and use only the falls before it, whose next year was already over. Then compare with what really happened. Rows need at least 3 earlier falls.</p>
         <div class="stats" id="testFacts"></div>
@@ -413,7 +412,7 @@ dl.simf{display:grid;grid-template-columns:max-content 1fr;gap:5px 14px;margin:0
         <p class="note">Pale bar: the range the earlier falls gave. Dot: what really happened a year on.</p>
         <details><summary>Show the table (<span id="testCount"></span>)</summary><div class="scroll tall"><table class="data" id="testTable"></table></div></details>
       </div></details>
-    <details id="btSub"><summary><h3 data-k="bt"><span id="btTitle"></span></h3></summary>
+    <details id="btSub" open><summary><h3 data-k="bt"><span id="btTitle"></span></h3></summary>
       <div class="bd">
         <p class="note" id="btLead" style="max-width:860px"></p>
         <div class="ctl">
@@ -432,15 +431,14 @@ dl.simf{display:grid;grid-template-columns:max-content 1fr;gap:5px 14px;margin:0
   <section id="reference" class="card stack" aria-label="Reference">
     <h2>Reference</h2>
     <div class="two">
-      <div>
-        <h3 data-k="hl" style="margin-bottom:10px">Highs and lows against the last close</h3>
-        <div class="scroll"><table class="data" id="hl"></table></div>
+      <details><summary><h3 data-k="hl">Highs and lows against the last close</h3></summary>
+        <div class="scroll" style="margin-top:10px"><table class="data" id="hl"></table></div>
         <p class="note" id="hlCap" style="margin-top:10px"></p>
-      </div>
-      <div>
-        <div class="hrow"><h3 data-k="daily"><span id="dailyTitle">Last 10 trading days</span></h3><button type="button" class="btn" id="dailyMore" aria-controls="daily" style="padding:6px 10px;font-size:12px">Show 30</button></div>
+      </details>
+      <details><summary><h3 data-k="daily"><span id="dailyTitle">Last 10 trading days</span></h3></summary>
+        <button type="button" class="btn" id="dailyMore" aria-controls="daily" style="margin:10px 0;padding:6px 10px;font-size:12px">Show 30</button>
         <div class="scroll" id="daily"></div>
-      </div>
+      </details>
     </div>
     <p class="method"><b>Method.</b> A high counts as a turning point once the price closes the chosen size below it, and a low once it
       closes that size above it; a pullback smaller than the setting stays inside one swing. The newest turn is provisional
