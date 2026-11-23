@@ -339,6 +339,7 @@ dl.simf{display:grid;grid-template-columns:max-content 1fr;gap:5px 14px;margin:0
         <h2 data-k="sim"><span id="simTitle"></span></h2>
         <p class="sub" id="simIntro"></p>
       </div>
+      <div class="segw" id="simBaseW" hidden><span>Fall from</span><div class="seg" id="simBase" role="group" aria-label="Measure falls from"><button type="button" data-v="10">The 10-year high</button><button type="button" data-v="ath">The record</button></div></div>
     </div>
     <div class="stack" id="nextBody" style="gap:28px">
       <div class="stats" id="simLead"></div>
@@ -620,7 +621,7 @@ const TIPS = {
   rank: ["Every 10%+ fall, newest first, today on top (gold)", "Orange bar: how deep, and how long to the low", "Blue bar: time from the low back to the record", "Faded: past falls that stopped before today’s depth", "Record view: a new drop before the old record is regained stays part of the earlier fall", "Swing-high view: each 10% drop from a high, ended by a 10% rise, counts on its own; no time back", "Switch: last 10 years or all history"],
   close: ["Latest closing price", "Move against the day before", "During US market hours: the live price"],
   facts: ["Today’s fall in context", "How long since the record", "When it was last this far down", "How earlier falls this deep ended", "The last big fall that finished"],
-  sim: ["Every earlier fall from a record that got at least as deep as today", "Tiles: how many fell 5%, 10% or 20% further, and the price that means today", "Histograms: a year later, and how fast each got this deep", "Table: per fall, how it got here, how much further it fell, how long back to the high, a year later"],
+  sim: ["Every earlier fall from a record that got at least as deep as today", "Record older than 10 years: falls from the 10-year high instead, with a switch back to the record", "Tiles: how many fell 5%, 10% or 20% further, and the price that means today", "Histograms: a year later, and how fast each got this deep", "Table: per fall, how it got here, how much further it fell, how long back to the high, a year later"],
   speedh: ["Days from the record to today’s depth, for each earlier fall", "Dark: faster than today · gold: same speed · light: slower", "One day per bar; wider bars when today took 20 days or more", "Last bar: everything slower"],
   fan: ["Not a prediction", "Start: today, or 10, 20 or 30% lower", "Each line: one past fall that got that deep, its next year applied to the start price", "List: each fall and where it was a year later", "Point at a name to pick it out; click to keep it", "Table: every case"],
   hl: ["Today’s price against the record high", "And the highest and lowest closes of the last year and 6 months", "Negative: below that level · positive: above"],
@@ -841,10 +842,13 @@ function render() {
 }
 
 // Past falls at least as deep as today's: four counts, two histograms, the table, and each one's next year replayed
-function similarFalls() {
-  const S = D.similar;
+// ten: falls from the high of the 10 years before each day, for a record older than the data shown
+function similarFalls(S = D.similar, ten = false) {
+  const hiName = ten ? 'the 10-year high' : 'the record';
+  ['nextBody', 'testSub', 'fanSub', 'yrHist'].forEach(id => $(id).hidden = false);
+  [...$('simBase').querySelectorAll('button')].forEach(b => b.setAttribute('aria-pressed', (b.dataset.v === '10') === ten));
   if (!S || !S.rows.length) {
-    $('simTitle').textContent = ddNow >= 0 ? 'What came next: nothing to compare at a record' : `What came next: no earlier fall from a record got to ${pc(ddNow)}`;
+    $('simTitle').textContent = ddNow >= 0 ? 'What came next: nothing to compare at a record' : `What came next: no earlier fall from ${hiName} got to ${pc(S ? S.now : ddNow)}`;
     $('simIntro').textContent = 'Not enough history: there are no earlier falls this deep to compare with.';
     $('nextBody').hidden = true; $('testSub').hidden = true; return;
   }
@@ -852,7 +856,7 @@ function similarFalls() {
   // Year-later values: one source for the tile, the histogram, the table and the count here
   const yr1 = Object.fromEntries(S.scen[0].cases.filter(c => c.fwd[252] != null).map(c => [c.peak, c.fwd[252]]));
   const v1 = Object.values(yr1), toHigh = R.map(r => r.moreDays + r.recDays);
-  $('simTitle').textContent = `The ${pl(n, 'earlier fall')} that got to ${pc(S.now)}, since ${S.since}`;
+  $('simTitle').textContent = `The ${pl(n, 'earlier fall')}${ten ? ' from a 10-year high' : ''} that got to ${pc(S.now)}, since ${S.since}`;
   $('simIntro').textContent = `Today took ${pl(S.days, 'day')} to get here: ${F.length} of the ${n} got here as fast or faster. Each row: how it got here, how much further it fell, and where it stood a year later.`;
 
   // Four counts: fell 5 and 10% further (20% in the note), a year later, back at the high
@@ -884,7 +888,7 @@ function similarFalls() {
   const binName = k => k === 19 ? `${19 * bw + 1} days or more` : bw === 1 ? pl(k + 1, 'day') : `${k * bw + 1} to ${(k + 1) * bw} days`;
   R.forEach(r => sb[bd(r.hitDays) - 1]++);
   const smx = Math.max(1, ...sb);
-  $('spNote').textContent = `Days from the record to ${pc(S.now)}. Dark: faster than today; gold: same speed (${pl(S.days, 'day')}).`;
+  $('spNote').textContent = `Days from ${ten ? 'the high' : 'the record'} to ${pc(S.now)}. Dark: faster than today; gold: same speed (${pl(S.days, 'day')}).`;
   $('spHist').innerHTML = sb.map((c, k) => `<i style="height:${c / smx * 100}%;background:${k + 1 < today ? '#8E949D' : k + 1 === today ? 'var(--record)' : '#D5D8DD'}${c ? '' : ';visibility:hidden'}" title="${binName(k)}: ${c}"></i>`).join('');
   $('spHist').setAttribute('aria-label', `Histogram of how many days ${n} earlier falls took to get to ${pc(S.now)}; today took ${pl(S.days, 'day')}`);
   axis('spAx', [...(today > 3 ? [[0, '1 d', 'l']] : []), [(today - .5) / 20 * 100, `${S.days} d · today`, 'g' + (today <= 3 ? ' l' : today >= 18 ? ' r' : '')], ...(today < 18 ? [[100, `${19 * bw + 1} d+`, 'r']] : [])]);
@@ -927,8 +931,8 @@ function similarFalls() {
   let pick = null;  // pressed case in the side list
   function fan(sc) {
     const P = last * (1 - sc.extra), cs = sc.cases.slice().reverse(), W = cs.map(c => c.fwd), K = Math.max(0, ...W.map(f => f.length));
-    const h0 = Math.max(N - 63, 0), ath = D.athValue, grey = '#9AA1AC';
-    $('fanTitle').textContent = sc.extra ? `If it falls ${Math.round(sc.extra * 100)}% more, to ${money(P)} (${pc(depthOf(sc.extra))} from the record): the year after, ${pl(cs.length, 'time')}`
+    const h0 = Math.max(N - 63, 0), ath = ten ? S.high : D.athValue, grey = '#9AA1AC';
+    $('fanTitle').textContent = sc.extra ? `If it falls ${Math.round(sc.extra * 100)}% more, to ${money(P)} (${pc(depthOf(sc.extra))} from ${hiName}): the year after, ${pl(cs.length, 'time')}`
       : `The year after reaching ${pc(S.now)}, replayed from today’s close`;
     const day = k => { const d = new Date(dates[N - 1]); d.setDate(d.getDate() + Math.round(k * 365.25 / 252)); return d.toISOString().slice(0, 10); };
     const ks = [...Array(K).keys()], q = k => W.filter(f => f.length > k).map(f => P * (1 + f[k])), kx = ks.map(day);
@@ -949,7 +953,7 @@ function similarFalls() {
       shapes: [{type: 'line', xref: 'paper', x0: 0, x1: 1, y0: ath, y1: ath, line: {color: css('--record'), width: 1.2, dash: '4px,4px'}},
                {type: 'line', xref: 'paper', x0: 0, x1: 1, y0: P, y1: P, line: {color: css('--down'), width: 1.2, dash: '3px,3px'}},
                {type: 'line', yref: 'paper', y0: 0, y1: 1, x0: dates[N - 1], x1: dates[N - 1], line: {color: css('--muted'), width: 1, dash: 'dot'}}],
-      annotations: [lab(ath, `<b>Record ${money(ath)}</b>`, css('--record'), 'bottom'), lab(P, `start ${money(P)}`, css('--down'), 'top')]});
+      annotations: [lab(ath, `<b>${ten ? '10-year high' : 'Record'} ${money(ath)}</b>`, css('--record'), 'bottom'), lab(P, `start ${money(P)}`, css('--down'), 'top')]});
     Plotly.react('fan', [
       {x: kx, y: lows, mode: 'lines', line: {width: 0}, hoverinfo: 'skip'},
       {x: kx, y: highs, mode: 'lines', line: {width: 0}, fill: 'tonexty', fillcolor: 'rgba(31,87,214,.10)', hoverinfo: 'skip'},
@@ -982,7 +986,7 @@ function similarFalls() {
     const at = k => { const v = W.filter(f => f.length > k).map(f => f[k]);
       return v.length ? `higher in ${v.filter(x => x > 0).length} of ${v.length}, ${pc(Math.min(...v), 0)} to ${pc(Math.max(...v), 0)}` : 'no case has got this far yet'; };
     const back = W.filter(f => f.some(x => P * (1 + x) >= ath)).length;
-    $('fanFacts').innerHTML = [['6 months on', at(126)], ['1 year on', at(252)], ['Back at the record within a year', `${back} of ${W.length}`],
+    $('fanFacts').innerHTML = [['6 months on', at(126)], ['1 year on', at(252)], [`Back at ${hiName} within a year`, `${back} of ${W.length}`],
       ...(ok.length < S.scen.length ? [['Deeper starts', 'hidden: fewer than 3 past cases']] : [])].map(([k, v]) => `<div><span>${k}</span><span>${v}</span></div>`).join('');
     const cell = (f, k) => f.length > k ? `<td class="num ${cls(f[k])}">${pc(f[k])}</td>` : '<td class="num">–</td>';
     $('fanCount').textContent = cs.length;
@@ -994,7 +998,7 @@ function similarFalls() {
     [...$('scen').querySelectorAll('button')].forEach(b => b.setAttribute('aria-pressed', +b.dataset.x === sc.extra));
   }
   if (!ok.length) { $('fanSub').hidden = true; $('testSub').hidden = true; return; }
-  $('scen').insertAdjacentHTML('beforeend', ok.map(sc => `<button type="button" data-x="${sc.extra}">${sc.extra ? `${Math.round(sc.extra * 100)}% lower` : 'Today'} (${sc.cases.length})</button>`).join(''));
+  $('scen').innerHTML = ok.map(sc => `<button type="button" data-x="${sc.extra}">${sc.extra ? `${Math.round(sc.extra * 100)}% lower` : 'Today'} (${sc.cases.length})</button>`).join('');
   $('scen').onclick = e => { const x = e.target.closest('button')?.dataset.x; if (x !== undefined) fan(ok.find(sc => sc.extra === +x)); };
   fan(ok[0]);
 
@@ -1038,7 +1042,11 @@ function similarFalls() {
       (x.a !== undefined ? `<i class="dot" style="left:${at(x.a)};background:var(${x.a >= 0 ? '--up' : '--down'})" title="Real a year on: ${pc(x.a)}"></i>` : '') +
       `</div><span class="t ${x.kind}">${x.call}</span>`).join('');
 }
-similarFalls();
+if (D.similar10) {
+  $('simBaseW').hidden = false;
+  $('simBase').onclick = e => { const v = e.target.closest('button')?.dataset.v; if (v) similarFalls(v === '10' ? D.similar10 : D.similar, v === '10'); };
+  similarFalls(D.similar10, true);
+} else similarFalls();
 
 // Saved daily guesses: one chart per guess day, with the real closes since added
 function trackRecord() {

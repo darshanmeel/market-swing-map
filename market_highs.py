@@ -22,6 +22,7 @@ import subprocess
 import sys
 import threading
 import traceback
+from collections import deque
 from concurrent.futures import ProcessPoolExecutor
 from datetime import datetime
 from functools import partial
@@ -102,12 +103,25 @@ def load(tickers):
     return data
 
 
-def highs(s):
-    """Each close against the all-time high set BEFORE that day, so a new record shows as a gain over the old one."""
+def highs(s, years=None):
+    """Each close against the all-time high set BEFORE that day, so a new record shows as a gain over the old one.
+    With `years`: against the highest close of the `years` before that day instead (the columns keep their names)."""
     out = pd.DataFrame({"close": s})
-    out["high_ATH"] = s.shift().cummax()
+    if years is None:
+        out["high_ATH"] = s.shift().cummax()
+        out["prev_ath_date"] = pd.Series(s.index, index=s.index).where(s >= s.cummax()).ffill().shift()
+    else:  # sliding-window maximum: q holds the window's candidate highs, highest first; a tie keeps the later day
+        c, t, win, q = s.to_numpy(), s.index, pd.DateOffset(years=years), deque()
+        hi, at = [np.nan], [pd.NaT]
+        for i in range(1, len(c)):
+            while q and c[q[-1]] <= c[i - 1]:
+                q.pop()
+            q.append(i - 1)
+            while t[q[0]] < t[i] - win:
+                q.popleft()
+            hi.append(c[q[0]]); at.append(t[q[0]])
+        out["high_ATH"], out["prev_ath_date"] = hi, at
     out["pct_ATH"] = s / out.high_ATH - 1
-    out["prev_ath_date"] = pd.Series(s.index, index=s.index).where(s >= s.cummax()).ffill().shift()
     return out
 
 
@@ -180,7 +194,7 @@ def similar(d, every=None):
             "recDays": int(e["Days to recover"]), "recover": e["Recovery"],
             "rise": e["Rise after low"] if isinstance(e["Rise after low"], str) else "",
             "up": None if pd.isna(e["_up"]) else e["_up"], "upDays": None if pd.isna(e["_upDays"]) else int(e["_upDays"])})
-    return {"now": float(now), "days": days_now, "peak": str(peak_now.date()), "since": str(d.index[0].year), "rows": rows,
+    return {"now": float(now), "days": days_now, "peak": str(peak_now.date()), "high": float(d.high_ATH.iloc[-1]), "since": str(d.index[0].year), "rows": rows,
             "scen": [{"extra": x, "cases": next_year(d, every, (1 + now) * (1 - x) - 1)} for x in (0, 0.1, 0.2, 0.3)]}
 
 
@@ -382,6 +396,8 @@ def page_data(t, d, eps, pages, name, every, sim):
                  for _, e in every.iterrows() if e["Depth %"] <= -BIG_FALL or e.Status != "reversed"],
         "rankSwing": swing_falls(d.close),
         "dailyTable": daily_table(d), "highsLows": highs_lows(d), "facts": facts(d, eps), "similar": sim, "track": track(name, d), "backtest": backtest(d),
+        # A record older than 10 years has few falls like today's; falls from the 10-year high compare better
+        "similar10": similar(highs(d.close, 10)) if d.prev_ath_date.iloc[-1] < d.index[-1] - pd.DateOffset(years=10) else None,
     }
 
 
