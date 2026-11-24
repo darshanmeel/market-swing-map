@@ -261,7 +261,8 @@ def track(name, d):
 def other_ways(d, turned):
     """Four other guesses from the same close, as returns: middle path and 10-90% band (trend: one line)."""
     c, k = d.close.to_numpy(), np.arange(HORIZON + 1)
-    band = lambda m: {"n": len(m), **{key: [round(float(x), 3) for x in np.nanquantile(m, q, axis=0)]
+    # Rows end early when a low is under a year before the last close; the band stops where no row has a value left
+    band = lambda m: {"n": len(m), **{key: [round(float(x), 3) for x in np.nanquantile(m[:, :(~np.isnan(m)).any(0).sum()], q, axis=0)]
                                       for key, q in (("mid", .5), ("lo", .1), ("hi", .9))}}
     out = {}
     # Shallower falls that turned: falls that stopped between half of today's depth and today's depth, replayed from their low
