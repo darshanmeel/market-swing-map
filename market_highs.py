@@ -188,7 +188,8 @@ def similar(d, every=None):
         hit = after[after <= now].index[0]
         rows.append({
             "peak": str(peak.date()), "hitDays": (hit - peak).days,
-            "first": float(after[after.index <= peak + pd.Timedelta(days=days_now)].min()),
+            # At least the first close after that peak: a record set a day or two ago can be closer than the next trading day
+            "first": float(after.iloc[:max(1, (after.index <= peak + pd.Timedelta(days=days_now)).sum())].min()),
             "more": float(d.close[low] / d.close[hit] - 1), "moreDays": (low - hit).days,
             "low": str(low.date()), "depth": float(e["Depth %"]) / 100,
             "recDays": int(e["Days to recover"]), "recover": e["Recovery"],
